@@ -1,0 +1,1912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PlantCare AI — Plant Disease Detection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+/* ─── RESET ─── */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:rgba(30,45,31,.15);border-radius:2px}
+
+/* ─── TOKENS ─── */
+:root{
+  --cream:#f0ede6; --cream-light:#fafaf8; --cream-mid:#ede9e0;
+  --forest:#1e2d1f; --forest-mid:#2c3e2e; --forest-light:#3d5440;
+  --leaf:#4a7c59; --leaf-bright:#5f9e6e; --leaf-glow:#6aab78;
+  --text-dark:#1a1a18; --text-mid:#4a4a44; --text-light:#8a8a80;
+  --border:rgba(30,45,31,.12); --border-strong:rgba(30,45,31,.22);
+  --tag-bg:#e8f0e9; --tag-text:#2c5f35;
+  --r8:8px; --r12:12px; --r16:16px; --r20:20px; --r24:24px; --r100:100px;
+  --shadow-sm:0 2px 12px rgba(30,45,31,.07);
+  --shadow-md:0 8px 32px rgba(30,45,31,.12);
+}
+
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text-dark);overflow-x:hidden}
+
+/* ─── PAGE SYSTEM ─── */
+.page{display:none;min-height:100vh}
+.page.active{display:block}
+
+/* ─── NAVBAR ─── */
+nav{
+  position:fixed;inset:0 0 auto;height:60px;z-index:500;
+  background:var(--cream-light);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 2.5rem;gap:1rem;
+}
+.nav-brand{
+  display:flex;align-items:center;gap:8px;font-family:'Instrument Serif',serif;
+  font-size:1.18rem;color:var(--text-dark);background:none;border:none;
+  cursor:pointer;flex-shrink:0;
+}
+.nav-dot{width:8px;height:8px;background:var(--leaf);border-radius:50%}
+.nav-links{display:flex;align-items:center;gap:2px;list-style:none;margin-left:auto}
+.nav-btn{
+  background:none;border:none;cursor:pointer;padding:7px 14px;border-radius:8px;
+  font-family:'DM Sans',sans-serif;font-size:.83rem;color:var(--text-mid);transition:all .2s;
+}
+.nav-btn:hover,.nav-btn.active{background:rgba(30,45,31,.07);color:var(--text-dark)}
+.nav-cta{
+  background:var(--forest) !important;color:#fff !important;
+  border-radius:var(--r100) !important;padding:8px 22px !important;
+  font-weight:500 !important;margin-left:6px;
+}
+.nav-cta:hover{background:var(--forest-mid) !important;transform:translateY(-1px)}
+
+/* ════════════════════════════════════════
+   HOME PAGE
+════════════════════════════════════════ */
+
+/* ─── HERO ─── */
+.hero{
+  margin-top:60px;background:var(--cream-light);
+  min-height:calc(100vh - 60px);
+  display:grid;grid-template-columns:1fr 1fr;
+  align-items:center;gap:4rem;padding:5rem 3rem 4rem;
+  position:relative;overflow:hidden;
+}
+.hero::after{
+  content:'';position:absolute;bottom:0;right:0;
+  width:52%;height:87%;background:var(--forest);
+  border-radius:32px 0 0 0;z-index:0;
+}
+.hero-left{position:relative;z-index:2;max-width:520px}
+.hero-right{position:relative;z-index:2;display:flex;justify-content:center;align-items:center}
+
+.tag-pill{
+  display:inline-flex;align-items:center;gap:7px;
+  background:var(--tag-bg);color:var(--tag-text);
+  font-size:.72rem;font-weight:500;letter-spacing:.06em;text-transform:uppercase;
+  padding:5px 14px;border-radius:var(--r100);margin-bottom:1.75rem;
+}
+.tag-pill::before{content:'';width:6px;height:6px;background:var(--leaf);border-radius:50%}
+.hero-h1{
+  font-family:'Instrument Serif',serif;
+  font-size:clamp(2.8rem,4.5vw,4.3rem);line-height:1.06;
+  color:var(--text-dark);margin-bottom:1.2rem;letter-spacing:-.025em;
+}
+.hero-h1 em{font-style:italic;color:var(--leaf)}
+.hero-p{
+  font-size:.96rem;line-height:1.75;color:var(--text-mid);
+  font-weight:300;max-width:400px;margin-bottom:2.25rem;
+}
+.hero-btns{display:flex;align-items:center;gap:1rem;margin-bottom:3.5rem;flex-wrap:wrap}
+.btn-dark{
+  background:var(--forest);color:#fff;padding:13px 28px;border-radius:var(--r100);
+  font-size:.88rem;font-weight:500;border:none;cursor:pointer;
+  font-family:'DM Sans',sans-serif;letter-spacing:.01em;transition:all .25s;
+}
+.btn-dark:hover{background:var(--forest-mid);transform:translateY(-1px)}
+.btn-ghost{
+  display:flex;align-items:center;gap:9px;
+  background:none;border:none;cursor:pointer;
+  font-size:.88rem;color:var(--text-mid);font-family:'DM Sans',sans-serif;transition:color .2s;
+}
+.btn-ghost:hover{color:var(--text-dark)}
+.play-btn{
+  width:35px;height:35px;border-radius:50%;border:1.5px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:.62rem;
+  color:var(--text-dark);transition:all .2s;
+}
+.btn-ghost:hover .play-btn{background:var(--forest);color:#fff;border-color:var(--forest)}
+.hero-stats{display:flex;gap:3rem;padding-top:2rem;border-top:1px solid var(--border)}
+.stat-num{font-family:'Instrument Serif',serif;font-size:2rem;color:var(--text-dark);display:block;letter-spacing:-.02em}
+.stat-lbl{font-size:.76rem;color:var(--text-light);margin-top:2px;display:block}
+
+/* Hero visual */
+.hero-card{
+  width:100%;max-width:440px;border-radius:28px;overflow:hidden;
+  aspect-ratio:4/3;position:relative;background:var(--forest-mid);
+  display:flex;align-items:flex-end;justify-content:center;
+}
+.hero-leaves{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:7rem;opacity:.32;user-select:none;pointer-events:none;
+  flex-wrap:wrap;gap:.5rem;padding:1rem;
+}
+.hero-float-badge{
+  position:absolute;top:1.25rem;right:1.25rem;
+  background:var(--leaf-glow);color:#fff;font-size:.72rem;font-weight:600;
+  padding:6px 14px;border-radius:var(--r100);letter-spacing:.04em;
+  animation:floatY 3s ease-in-out infinite;
+}
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.hero-pot-row{position:relative;z-index:2;display:flex;align-items:flex-end;gap:1rem;padding:1.5rem;width:100%}
+.pot-chip{
+  background:rgba(255,255,255,.93);backdrop-filter:blur(10px);
+  border-radius:16px;padding:12px 16px;display:flex;align-items:center;gap:10px;
+  box-shadow:0 8px 30px rgba(0,0,0,.2);
+}
+.pot-em{font-size:2.1rem}
+.pot-name{font-size:.78rem;font-weight:500;color:var(--text-dark)}
+.pot-status{font-size:.68rem;color:var(--leaf);margin-top:2px;display:flex;align-items:center;gap:4px}
+.pot-status::before{content:'';width:5px;height:5px;background:var(--leaf);border-radius:50%}
+.conf-chip{
+  position:absolute;bottom:1.5rem;right:1.25rem;
+  background:var(--forest);color:#fff;font-size:.74rem;font-weight:500;
+  padding:8px 14px;border-radius:12px;display:flex;align-items:center;gap:6px;
+}
+.conf-chip-dot{width:6px;height:6px;background:var(--leaf-glow);border-radius:50%}
+
+/* ─── SCAN STRIP ─── */
+.strip{
+  background:var(--forest);padding:1.75rem 2.5rem;
+  display:flex;align-items:center;gap:2rem;flex-wrap:wrap;
+}
+.strip-title{font-family:'Instrument Serif',serif;font-size:1.45rem;color:#fff;white-space:nowrap}
+.strip-sub{font-size:.78rem;color:rgba(255,255,255,.45);max-width:210px;line-height:1.5}
+.strip-tabs{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.strip-tab{
+  padding:7px 17px;border-radius:var(--r100);font-size:.77rem;
+  color:rgba(255,255,255,.5);cursor:pointer;border:none;
+  background:transparent;font-family:'DM Sans',sans-serif;transition:all .2s;
+}
+.strip-tab.on{background:rgba(255,255,255,.13);color:#fff}
+.strip-tab:hover:not(.on){color:rgba(255,255,255,.82)}
+.strip-go{
+  width:38px;height:38px;border-radius:50%;background:var(--leaf-glow);
+  border:none;cursor:pointer;color:#fff;font-size:1.05rem;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;
+}
+.strip-go:hover{background:var(--leaf);transform:scale(1.06)}
+
+/* ─── DISEASE CARDS STRIP ─── */
+.d-strip{background:var(--forest);padding:0 2.5rem 3rem}
+.d-strip-hdr{
+  display:flex;justify-content:space-between;align-items:center;
+  border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:1.25rem;margin-bottom:1.5rem;
+}
+.d-strip-title{font-family:'Instrument Serif',serif;font-size:1.05rem;color:#fff;font-weight:400}
+.d-strip-count{font-size:.74rem;color:rgba(255,255,255,.35)}
+.d-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
+.d-card{
+  background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);
+  border-radius:20px;overflow:hidden;cursor:pointer;transition:all .3s;position:relative;
+}
+.d-card:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.17);transform:translateY(-4px)}
+.d-card-img{height:130px;display:flex;align-items:center;justify-content:center;font-size:3.8rem;position:relative;background:rgba(255,255,255,.03)}
+.sev-pill{
+  position:absolute;top:10px;right:10px;font-size:.63rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.06em;padding:3px 10px;border-radius:var(--r100);
+}
+.sev-H{background:rgba(220,80,80,.22);color:#ff9090}
+.sev-M{background:rgba(220,160,60,.22);color:#f5c870}
+.sev-L{background:rgba(80,180,100,.22);color:#80d494}
+.d-card-body{padding:12px 16px 16px}
+.d-card-name{font-size:.88rem;font-weight:500;color:#fff;margin-bottom:3px}
+.d-card-plant{font-size:.71rem;color:rgba(255,255,255,.38)}
+.d-card-arrow{
+  position:absolute;bottom:14px;right:14px;
+  width:28px;height:28px;border-radius:50%;background:var(--leaf-glow);
+  border:none;cursor:pointer;color:#fff;font-size:.8rem;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;
+}
+.d-card-arrow:hover{background:var(--leaf);transform:scale(1.1)}
+
+/* ─── SECTION HELPERS ─── */
+.eyebrow{
+  font-size:.72rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--leaf);margin-bottom:1rem;display:flex;align-items:center;gap:8px;
+}
+.eyebrow::before{content:'';width:24px;height:1.5px;background:var(--leaf)}
+.sec-h2{font-family:'Instrument Serif',serif;font-size:clamp(2rem,3.5vw,2.9rem);line-height:1.12;color:var(--text-dark);margin-bottom:1rem;letter-spacing:-.022em}
+.sec-p{font-size:.9rem;line-height:1.75;color:var(--text-mid);font-weight:300;margin-bottom:1.75rem}
+
+/* ─── DETECT SECTION ─── */
+.detect-sec{background:var(--cream-light);padding:5rem 2.5rem}
+.detect-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:start}
+.check-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:2rem}
+.check-list li{display:flex;align-items:center;gap:12px;font-size:.85rem;color:var(--text-mid)}
+.check-icon{
+  width:22px;height:22px;flex-shrink:0;border-radius:50%;
+  background:var(--tag-bg);color:var(--tag-text);
+  display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:600;
+}
+/* Upload zone */
+.upload-zone{
+  border:1.5px dashed rgba(30,45,31,.2);border-radius:var(--r24);padding:3rem 2rem;
+  text-align:center;cursor:pointer;transition:all .3s;background:var(--cream);position:relative;
+}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--leaf);background:rgba(74,124,89,.04)}
+.upload-icon{
+  width:68px;height:68px;background:var(--forest);border-radius:18px;
+  display:flex;align-items:center;justify-content:center;font-size:1.8rem;
+  margin:0 auto 1.25rem;
+}
+.upload-h{font-family:'Instrument Serif',serif;font-size:1.25rem;color:var(--text-dark);margin-bottom:.5rem}
+.upload-sub{font-size:.82rem;color:var(--text-light);font-weight:300;margin-bottom:1.5rem}
+.upload-or{font-size:.77rem;color:var(--text-light);margin:.8rem 0}
+.btn-choose{
+  background:var(--forest);color:#fff;padding:10px 24px;border-radius:var(--r100);
+  font-size:.84rem;font-weight:500;border:none;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all .2s;
+}
+.btn-choose:hover{background:var(--forest-mid)}
+#file-input{display:none}
+#preview-img{max-width:100%;border-radius:16px;margin-top:.75rem;display:none;object-fit:cover}
+.btn-analyse{
+  display:none;margin-top:1rem;width:100%;
+  background:var(--leaf-glow);color:#fff;padding:13px;border-radius:var(--r12);
+  font-size:.9rem;font-weight:500;border:none;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all .2s;
+}
+.btn-analyse:hover:not(:disabled){background:var(--leaf)}
+.btn-analyse:disabled{opacity:.6;cursor:not-allowed}
+.btn-reset{
+  display:none;margin-top:.6rem;width:100%;
+  background:rgba(30,45,31,.06);color:var(--text-mid);padding:10px;border-radius:var(--r12);
+  font-size:.84rem;border:1px solid var(--border);cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all .2s;
+}
+.btn-reset:hover{background:rgba(30,45,31,.1)}
+/* Result panel */
+.result-panel{
+  display:none;margin-top:1.25rem;background:var(--forest);
+  border-radius:var(--r20);padding:1.5rem;color:#fff;
+  animation:slideUp .4s ease;
+}
+@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.r-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:1rem}
+.r-status{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.r-name{font-family:'Instrument Serif',serif;font-size:1.5rem;line-height:1.15}
+.r-plant{font-size:.78rem;color:rgba(255,255,255,.42);margin-top:4px}
+.r-conf-num{font-family:'Instrument Serif',serif;font-size:2rem;text-align:right}
+.r-conf-lbl{font-size:.67rem;color:rgba(255,255,255,.38);text-transform:uppercase;letter-spacing:.06em;text-align:right}
+.r-sev-row{display:flex;align-items:center;gap:8px;margin-bottom:.75rem;font-size:.78rem;color:rgba(255,255,255,.55)}
+.sev-badge-sm{font-size:.7rem;font-weight:600;padding:2px 10px;border-radius:var(--r100)}
+.r-divider{border:none;border-top:1px solid rgba(255,255,255,.1);margin:.75rem 0}
+.r-section-lbl{font-size:.67rem;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.35);margin-bottom:.6rem}
+.r-text{font-size:.85rem;color:rgba(255,255,255,.62);line-height:1.65;font-weight:300}
+.r-list{list-style:none;display:flex;flex-direction:column;gap:5px}
+.r-list li{font-size:.83rem;color:rgba(255,255,255,.58);display:flex;gap:8px;font-weight:300}
+.r-list li::before{content:'→';color:var(--leaf-glow);flex-shrink:0}
+.r-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:1rem}
+.r-tag{font-size:.71rem;padding:4px 12px;border-radius:var(--r100);background:rgba(255,255,255,.08);color:rgba(255,255,255,.6)}
+.btn-aloud{
+  margin-top:1rem;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);
+  color:rgba(255,255,255,.62);padding:7px 16px;border-radius:var(--r100);
+  font-size:.77rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;
+}
+.btn-aloud:hover{background:rgba(255,255,255,.12)}
+.spinner-wrap{display:flex;justify-content:center;align-items:center;padding:2.5rem}
+.spinner{width:34px;height:34px;border:2.5px solid rgba(255,255,255,.1);border-top-color:var(--leaf-glow);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* Model info */
+.model-info{
+  margin-top:1.5rem;background:var(--cream);border:1px solid var(--border);
+  border-radius:var(--r16);padding:1.25rem;
+}
+.model-info-title{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--leaf);margin-bottom:.8rem}
+.model-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:5px 0;border-bottom:1px solid rgba(30,45,31,.07);font-size:.82rem;
+}
+.model-row:last-child{border-bottom:none}
+.model-k{color:var(--text-light)}
+.model-v{color:var(--text-dark);font-family:monospace;font-size:.79rem}
+
+/* ─── FEATURES ─── */
+.feat-sec{background:var(--cream);padding:5rem 2.5rem}
+.feat-inner{max-width:1100px;margin:0 auto}
+.feat-hdr{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:end;margin-bottom:3.5rem}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem}
+.feat-card{
+  background:var(--cream-light);border:1px solid var(--border);
+  border-radius:var(--r20);padding:1.75rem;transition:all .3s;
+}
+.feat-card:hover{border-color:var(--border-strong);transform:translateY(-3px);box-shadow:var(--shadow-md)}
+.feat-icon{
+  width:48px;height:48px;background:var(--forest);border-radius:14px;
+  display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1.25rem;
+}
+.feat-name{font-family:'Instrument Serif',serif;font-size:1.1rem;color:var(--text-dark);margin-bottom:.5rem}
+.feat-desc{font-size:.83rem;color:var(--text-mid);line-height:1.65;font-weight:300}
+
+/* ─── WEATHER ─── */
+.weather-sec{background:var(--forest);padding:4rem 2.5rem;display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+.w-card{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.09);border-radius:var(--r20);padding:2rem;transition:all .2s}
+.w-card:hover{background:rgba(255,255,255,.09)}
+.w-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.38);margin-bottom:1.5rem;display:flex;align-items:center;gap:6px}
+.w-temp{font-family:'Instrument Serif',serif;font-size:3.5rem;color:#fff;line-height:1;letter-spacing:-.02em}
+.w-unit{font-size:1.5rem;color:rgba(255,255,255,.38)}
+.w-cond{font-size:.85rem;color:rgba(255,255,255,.5);margin-top:.4rem;font-weight:300}
+.w-metrics{display:flex;gap:1.5rem;margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,.08)}
+.w-mval{font-size:1rem;font-weight:500;color:#fff;display:block}
+.w-mlbl{font-size:.68rem;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.04em}
+.risk-box{background:rgba(240,140,60,.12);border:1px solid rgba(240,140,60,.22);border-radius:12px;padding:10px 14px;font-size:.79rem;color:rgba(240,180,100,.9);margin-top:1rem;line-height:1.5}
+.stat-rows{display:flex;flex-direction:column}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:.65rem 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.stat-row:last-child{border-bottom:none}
+.stat-row-lbl{font-size:.8rem;color:rgba(255,255,255,.45);font-weight:300}
+.stat-row-val{font-family:'Instrument Serif',serif;font-size:1.22rem;color:#fff}
+.prog-bar{height:3px;background:rgba(255,255,255,.09);border-radius:2px;overflow:hidden;margin-top:.75rem}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--leaf),var(--leaf-glow));border-radius:2px;width:0;transition:width 1.5s ease}
+.w-scan-btn{
+  margin-top:auto;background:var(--leaf-bright);color:#fff;width:100%;padding:14px;
+  border-radius:14px;font-size:.9rem;font-weight:500;border:none;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all .2s;
+}
+.w-scan-btn:hover{background:var(--leaf)}
+.w-cta-card{display:flex;flex-direction:column;justify-content:space-between;min-height:240px}
+
+/* ─── CHAT ─── */
+.chat-sec{background:var(--cream-light);padding:5rem 2.5rem}
+.chat-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1.2fr;gap:4rem;align-items:start}
+.quick-q{
+  display:block;width:100%;text-align:left;background:var(--cream);
+  border:1px solid var(--border);border-radius:12px;padding:11px 16px;
+  font-size:.84rem;color:var(--text-mid);cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all .2s;margin-bottom:.5rem;
+}
+.quick-q:hover{border-color:var(--leaf);color:var(--text-dark)}
+.chatbox{background:var(--cream);border:1px solid var(--border);border-radius:var(--r24);overflow:hidden}
+.chat-hdr{background:var(--forest);padding:1.25rem 1.5rem;display:flex;align-items:center;gap:12px}
+.chat-avatar{width:38px;height:38px;background:var(--leaf);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.chat-hdr-name{font-size:.88rem;font-weight:500;color:#fff}
+.chat-hdr-status{font-size:.68rem;color:var(--leaf-glow);display:flex;align-items:center;gap:4px}
+.chat-hdr-status::before{content:'●';font-size:.5rem}
+.chat-msgs{height:300px;overflow-y:auto;padding:1.25rem;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:84%;padding:10px 14px;border-radius:16px;font-size:.84rem;line-height:1.55}
+.msg.bot{background:var(--cream-light);color:var(--text-dark);border:1px solid var(--border);align-self:flex-start;border-bottom-left-radius:4px}
+.msg.user{background:var(--forest);color:#fff;align-self:flex-end;border-bottom-right-radius:4px;font-weight:300}
+.typing-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--text-light);margin:0 2px;animation:blink 1.2s infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+.chat-input-row{display:flex;gap:8px;padding:1rem;border-top:1px solid var(--border);background:var(--cream-light)}
+.chat-input{
+  flex:1;background:var(--cream);border:1px solid var(--border);border-radius:var(--r100);
+  padding:10px 16px;font-size:.84rem;font-family:'DM Sans',sans-serif;
+  color:var(--text-dark);outline:none;transition:border .2s;
+}
+.chat-input:focus{border-color:var(--leaf)}
+.chat-input::placeholder{color:var(--text-light)}
+.chat-send{
+  width:38px;height:38px;border-radius:50%;background:var(--forest);border:none;
+  cursor:pointer;color:#fff;font-size:.9rem;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0;transition:all .2s;
+}
+.chat-send:hover{background:var(--leaf)}
+
+/* ─── HOW IT WORKS ─── */
+.how-sec{background:var(--cream-mid);padding:5rem 2.5rem;border-top:1px solid var(--border)}
+.how-inner{max-width:1000px;margin:0 auto}
+.how-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;margin-top:2.5rem}
+.how-step{text-align:center}
+.step-num{
+  width:52px;height:52px;border-radius:50%;
+  background:var(--cream-light);border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;
+  font-family:'Instrument Serif',serif;font-size:1.1rem;color:var(--leaf);
+}
+.step-title{font-weight:600;color:var(--text-dark);margin-bottom:.45rem;font-size:.92rem}
+.step-desc{font-size:.81rem;color:var(--text-mid);line-height:1.65;font-weight:300}
+
+/* ════════════════════════════════════════
+   DIRECTORY PAGE
+════════════════════════════════════════ */
+.dir-page{padding-top:60px;background:var(--cream);min-height:100vh}
+.dir-top{background:var(--cream-light);border-bottom:1px solid var(--border);padding:3.5rem 2.5rem 2.5rem}
+.dir-top-inner{max-width:1100px;margin:0 auto}
+.search-row{display:flex;align-items:center;gap:1rem;margin-top:1.75rem;flex-wrap:wrap}
+.search-box{
+  flex:1;min-width:220px;background:var(--cream-light);border:1.5px solid var(--border);
+  border-radius:var(--r100);padding:11px 20px;font-size:.88rem;
+  font-family:'DM Sans',sans-serif;color:var(--text-dark);outline:none;transition:border .2s;
+}
+.search-box:focus{border-color:var(--leaf)}
+.filter-tabs{display:flex;gap:.5rem;flex-wrap:wrap}
+.ftab{
+  padding:8px 18px;border-radius:var(--r100);font-size:.78rem;
+  background:var(--cream-light);border:1.5px solid var(--border);
+  color:var(--text-mid);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;
+}
+.ftab.on{background:var(--forest);border-color:var(--forest);color:#fff}
+.ftab:hover:not(.on){border-color:var(--border-strong);color:var(--text-dark)}
+.dir-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;padding:2.5rem;max-width:1100px;margin:0 auto}
+.dir-card{
+  background:var(--cream-light);border:1px solid var(--border);
+  border-radius:var(--r20);overflow:hidden;cursor:pointer;transition:all .3s;
+}
+.dir-card:hover{border-color:var(--border-strong);transform:translateY(-4px);box-shadow:var(--shadow-md)}
+.dir-card-top{height:115px;background:var(--cream);display:flex;align-items:center;justify-content:center;font-size:3.5rem;position:relative}
+.dir-card-body{padding:1rem 1.25rem 1.25rem}
+.dir-card-name{font-weight:600;color:var(--text-dark);margin-bottom:3px;font-size:.92rem}
+.dir-card-plant{font-size:.73rem;color:var(--text-light);margin-bottom:.6rem}
+.dir-card-desc{font-size:.8rem;color:var(--text-mid);line-height:1.6;font-weight:300;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dir-card-link{font-size:.77rem;color:var(--leaf);margin-top:.6rem;font-weight:500}
+.cat-badge{position:absolute;bottom:8px;left:8px;font-size:.62rem;background:rgba(30,45,31,.08);color:var(--text-mid);padding:2px 8px;border-radius:var(--r100)}
+
+/* ════════════════════════════════════════
+   DISEASE DETAIL PAGE
+════════════════════════════════════════ */
+.detail-page{padding-top:60px;background:var(--cream);min-height:100vh}
+.detail-top{background:var(--cream-light);border-bottom:1px solid var(--border);padding:3rem 2.5rem 2.5rem}
+.detail-inner{max-width:900px;margin:0 auto}
+.back-btn{
+  background:none;border:1px solid var(--border);color:var(--text-mid);border-radius:8px;
+  padding:7px 16px;font-size:.82rem;cursor:pointer;font-family:'DM Sans',sans-serif;
+  display:inline-flex;align-items:center;gap:6px;transition:all .2s;margin-bottom:2rem;
+}
+.back-btn:hover{border-color:var(--border-strong);color:var(--text-dark)}
+.detail-hdr{display:flex;align-items:flex-start;gap:2rem;flex-wrap:wrap}
+.detail-emoji{font-size:4rem;flex-shrink:0}
+.detail-pills{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem}
+.dpill{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:3px 10px;border-radius:var(--r100)}
+.dpill-green{background:var(--tag-bg);color:var(--tag-text)}
+.dpill-red{background:rgba(200,60,60,.1);color:#c84040}
+.dpill-yellow{background:rgba(200,160,40,.1);color:#a07010}
+.dpill-blue{background:rgba(60,100,200,.1);color:#3050c0}
+.detail-title{font-family:'Instrument Serif',serif;font-size:2.3rem;color:var(--text-dark);letter-spacing:-.022em;margin-bottom:.45rem}
+.detail-pathogen{font-size:.85rem;color:var(--text-mid);font-style:italic;margin-bottom:.5rem}
+.detail-plant{font-size:.82rem;color:var(--leaf);font-weight:500;margin-bottom:.85rem}
+.detail-desc-txt{font-size:.9rem;color:var(--text-mid);line-height:1.75;font-weight:300;max-width:600px}
+.detail-body{padding:2.5rem;max-width:900px;margin:0 auto}
+.detail-2col{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem}
+.info-card{background:var(--cream-light);border:1px solid var(--border);border-radius:var(--r16);padding:1.5rem}
+.info-title{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-light);margin-bottom:.9rem;display:flex;align-items:center;gap:6px}
+.info-item{display:flex;gap:9px;padding:6px 0;border-bottom:1px solid rgba(30,45,31,.07);font-size:.84rem;color:var(--text-mid);line-height:1.5;font-weight:300}
+.info-item:last-child{border-bottom:none}
+.info-arrow{color:var(--leaf);flex-shrink:0}
+.crop-chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.25rem}
+.crop-chip{background:var(--tag-bg);color:var(--tag-text);font-size:.78rem;padding:4px 12px;border-radius:var(--r100);font-weight:500}
+.care-banner{background:var(--forest);border-radius:var(--r16);padding:1.75rem;margin-top:1.25rem}
+.care-banner-lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:.75rem}
+.care-banner-txt{font-size:.88rem;color:rgba(255,255,255,.7);line-height:1.7;font-weight:300}
+
+/* ════════════════════════════════════════
+   DASHBOARD PAGE
+════════════════════════════════════════ */
+.dash-page{padding-top:60px;background:var(--cream);min-height:100vh}
+.dash-top{background:var(--cream-light);border-bottom:1px solid var(--border);padding:3rem 2.5rem 2rem}
+.dash-inner{max-width:1100px;margin:0 auto}
+.dash-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem}
+.dash-stat{background:var(--cream-light);border:1px solid var(--border);border-radius:var(--r16);padding:1.5rem}
+.dash-stat-lbl{font-size:.71rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:.75rem;display:flex;align-items:center;gap:6px}
+.dash-stat-val{font-family:'Instrument Serif',serif;font-size:2rem;color:var(--text-dark)}
+.dash-stat-sub{font-size:.71rem;color:var(--text-light);margin-top:3px}
+.dash-main{display:grid;grid-template-columns:1.1fr 1.6fr;gap:1.5rem;padding:2rem 2.5rem;max-width:1100px;margin:0 auto}
+.dash-card{background:var(--cream-light);border:1px solid var(--border);border-radius:var(--r20);padding:1.5rem}
+.dash-card-title{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-light);margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between}
+.hist-item{display:flex;align-items:center;gap:.75rem;padding:.7rem 0;border-bottom:1px solid var(--border)}
+.hist-item:last-child{border-bottom:none}
+.hist-thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;flex-shrink:0;background:var(--cream);display:flex;align-items:center;justify-content:center;font-size:1.5rem}
+.hist-thumb img{width:44px;height:44px;border-radius:10px;object-fit:cover}
+.hist-disease{font-size:.88rem;font-weight:500;color:var(--text-dark)}
+.hist-meta{font-size:.71rem;color:var(--text-light)}
+.hist-right{margin-left:auto;text-align:right;flex-shrink:0}
+.hist-conf{font-size:.86rem;color:var(--leaf);font-weight:600}
+.hist-sev{font-size:.64rem;font-weight:600;text-transform:uppercase;margin-top:2px}
+.clear-btn{font-size:.72rem;background:rgba(200,60,60,.08);border:1px solid rgba(200,60,60,.15);color:#c84040;padding:4px 10px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.empty{text-align:center;padding:3rem 1.5rem;color:var(--text-light)}
+.empty-icon{font-size:2.5rem;display:block;margin-bottom:.75rem;opacity:.45}
+/* Weather in dash */
+.dash-weather{background:var(--forest);border:none}
+.dash-weather .w-label{margin-bottom:1rem}
+
+/* ════════════════════════════════════════
+   ABOUT PAGE
+════════════════════════════════════════ */
+.about-page{padding-top:60px;background:var(--cream);min-height:100vh}
+.about-top{background:var(--cream-light);border-bottom:1px solid var(--border);padding:5rem 2.5rem 4rem}
+.about-inner{max-width:800px;margin:0 auto}
+.about-body{padding:3rem 2.5rem;max-width:800px;margin:0 auto;display:flex;flex-direction:column;gap:1.5rem}
+.about-card{background:var(--cream-light);border:1px solid var(--border);border-radius:var(--r20);padding:1.75rem}
+.about-card-title{font-family:'Instrument Serif',serif;font-size:1.2rem;color:var(--leaf);margin-bottom:.75rem}
+.about-card-text{font-size:.88rem;color:var(--text-mid);line-height:1.78;font-weight:300}
+.tech-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1.25rem}
+.tech-lbl{font-size:.68rem;color:var(--leaf);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.tech-val{font-size:.82rem;color:var(--text-mid);font-weight:300}
+
+/* ═══════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════ */
+footer{background:var(--forest);padding:4rem 2.5rem 2rem}
+.footer-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3rem;padding-bottom:2.5rem;border-bottom:1px solid rgba(255,255,255,.09);margin-bottom:1.75rem}
+.footer-brand{font-family:'Instrument Serif',serif;font-size:1.35rem;color:#fff;display:flex;align-items:center;gap:8px;margin-bottom:.75rem}
+.footer-brand-dot{width:8px;height:8px;background:var(--leaf-glow);border-radius:50%}
+.footer-desc{font-size:.81rem;color:rgba(255,255,255,.38);line-height:1.7;font-weight:300;max-width:240px}
+.footer-col-title{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.35);margin-bottom:1.1rem}
+.footer-list{list-style:none;display:flex;flex-direction:column;gap:.6rem}
+.footer-list button{background:none;border:none;cursor:pointer;font-size:.84rem;color:rgba(255,255,255,.5);font-family:'DM Sans',sans-serif;font-weight:300;text-align:left;transition:color .2s;padding:0}
+.footer-list button:hover{color:#fff}
+.footer-bottom{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem}
+.footer-copy{font-size:.77rem;color:rgba(255,255,255,.28)}
+
+/* ═══════════════════════════════════════
+   TOAST
+═══════════════════════════════════════ */
+#toast{
+  position:fixed;bottom:2rem;right:2rem;z-index:9999;
+  background:var(--forest);color:#fff;padding:12px 20px;border-radius:14px;
+  font-size:.84rem;border-left:3px solid var(--leaf-glow);
+  box-shadow:0 8px 32px rgba(0,0,0,.25);max-width:320px;
+  display:none;animation:toastIn .3s ease;font-family:'DM Sans',sans-serif;
+}
+@keyframes toastIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* ─── ANIMATIONS ─── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp .65s ease both}
+.fa-d1{animation-delay:.08s} .fa-d2{animation-delay:.18s}
+.fa-d3{animation-delay:.28s} .fa-d4{animation-delay:.38s} .fa-d5{animation-delay:.48s}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:960px){
+  .hero{grid-template-columns:1fr;padding:3rem 1.5rem;min-height:auto}
+  .hero::after{display:none}
+  .hero-right{margin-top:2rem;justify-content:flex-start}
+  .detect-inner,.feat-hdr,.chat-inner,.feat-grid,.weather-sec,
+  .dash-main,.detail-2col,.footer-top{grid-template-columns:1fr!important;gap:1.5rem}
+  .d-cards,.dir-grid,.dash-stat-grid{grid-template-columns:1fr 1fr}
+  .how-steps{grid-template-columns:1fr 1fr}
+  nav{padding:0 1.25rem}
+}
+@media(max-width:600px){
+  .d-cards,.dir-grid,.dash-stat-grid{grid-template-columns:1fr}
+  .hero-h1{font-size:2.5rem}
+  .nav-links{display:none}
+  .strip-tabs{display:none}
+  .how-steps{grid-template-columns:1fr}
+}
+
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     NAVBAR
+══════════════════════════════════════════════ -->
+<nav>
+  <button class="nav-brand" onclick="showPage('home')">
+    <div class="nav-dot"></div>
+    PlantCare AI
+  </button>
+  <ul class="nav-links">
+    <li><button class="nav-btn" id="nb-home" onclick="showPage('home')">Home</button></li>
+    <li><button class="nav-btn" id="nb-detect" onclick="showPage('detect')">Detect</button></li>
+    <li><button class="nav-btn" id="nb-directory" onclick="showPage('directory')">Directory</button></li>
+    <li><button class="nav-btn" id="nb-dashboard" onclick="showPage('dashboard')">Dashboard</button></li>
+    <li><button class="nav-btn" id="nb-chat" onclick="showPage('chat')">Assistant</button></li>
+    <li><button class="nav-btn" id="nb-about" onclick="showPage('about')">About</button></li>
+    <li><button class="nav-btn nav-cta" onclick="showPage('detect')">Scan Now</button></li>
+  </ul>
+</nav>
+
+<!-- ══════════════════════════════════════════════
+     HOME PAGE
+══════════════════════════════════════════════ -->
+<div class="page active" id="page-home">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-left">
+      <div class="tag-pill fade-up fa-d1">AI-Powered Plant Health</div>
+      <h1 class="hero-h1 fade-up fa-d2">
+        Protect your crops<br>with <em>AI precision.</em>
+      </h1>
+      <p class="hero-p fade-up fa-d3">
+        PlantCare AI detects plant diseases instantly from leaf images — giving farmers expert diagnosis, treatment advice, and real-time weather risk alerts.
+      </p>
+      <div class="hero-btns fade-up fa-d4">
+        <button class="btn-dark" onclick="showPage('detect')">Scan a Leaf</button>
+        <button class="btn-ghost" onclick="showPage('detect')">
+          <div class="play-btn">▶</div>
+          See how it works
+        </button>
+      </div>
+      <div class="hero-stats fade-up fa-d5">
+        <div><span class="stat-num">400+</span><span class="stat-lbl">Scans today</span></div>
+        <div><span class="stat-num">38+</span><span class="stat-lbl">Diseases detected daily</span></div>
+        <div><span class="stat-num">96%</span><span class="stat-lbl">AI accuracy rate</span></div>
+      </div>
+    </div>
+    <div class="hero-right fade-up fa-d3">
+      <div class="hero-card">
+        <div class="hero-leaves">🍃🌿🍃🌱🍃🌿🍃</div>
+        <div class="hero-float-badge">✓ Healthy Leaf</div>
+        <div class="hero-pot-row">
+          <div class="pot-chip">
+            <div class="pot-em">🪴</div>
+            <div>
+              <div class="pot-name">Tomato Plant</div>
+              <div class="pot-status">No disease found</div>
+            </div>
+          </div>
+          <div class="conf-chip">
+            <div class="conf-chip-dot"></div>
+            96.4% Confidence
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCAN STRIP -->
+  <div class="strip">
+    <div>
+      <div class="strip-title">Scan now</div>
+      <div class="strip-sub">Upload any leaf photo for instant AI diagnosis</div>
+    </div>
+    <div class="strip-tabs">
+      <button class="strip-tab on" onclick="setStripTab(this)">All crops</button>
+      <button class="strip-tab" onclick="setStripTab(this)">Tomato</button>
+      <button class="strip-tab" onclick="setStripTab(this)">Wheat</button>
+      <button class="strip-tab" onclick="setStripTab(this)">Rice</button>
+    </div>
+    <button class="strip-go" onclick="showPage('detect')">→</button>
+  </div>
+
+  <!-- DISEASE CARD STRIP -->
+  <div class="d-strip">
+    <div class="d-strip-hdr">
+      <div class="d-strip-title">Common plant diseases</div>
+      <div class="d-strip-count">38 diseases catalogued</div>
+    </div>
+    <div class="d-cards" id="home-d-cards"></div>
+  </div>
+
+  <!-- DETECT SECTION (inline on home) -->
+  <section class="detect-sec" id="home-detect-anchor">
+    <div class="detect-inner">
+      <div>
+        <div class="eyebrow">AI Detection</div>
+        <h2 class="sec-h2">Upload a leaf,<br>get your diagnosis.</h2>
+        <p class="sec-p">Our deep learning model (plant_disease_model.h5) analyses your leaf image with 96%+ accuracy, identifying diseases and suggesting treatment in seconds.</p>
+        <ul class="check-list">
+          <li><div class="check-icon">✓</div>Detects 38+ plant diseases across 12 crop types</li>
+          <li><div class="check-icon">✓</div>Instant results with confidence score</li>
+          <li><div class="check-icon">✓</div>Personalised treatment &amp; prevention advice</li>
+          <li><div class="check-icon">✓</div>Scan history saved to your dashboard</li>
+        </ul>
+      </div>
+      <div id="detect-widget-home"></div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="feat-sec">
+    <div class="feat-inner">
+      <div class="feat-hdr">
+        <div>
+          <div class="eyebrow">Platform</div>
+          <h2 class="sec-h2">Everything a farmer needs.</h2>
+        </div>
+        <p class="sec-p" style="padding-top:.5rem">A complete agricultural intelligence platform — from disease detection to nearby store locators and real-time weather risk alerts.</p>
+      </div>
+      <div class="feat-grid">
+        <div class="feat-card"><div class="feat-icon">🔬</div><div class="feat-name">AI Disease Detection</div><p class="feat-desc">Upload any leaf image and get instant diagnosis with 96%+ accuracy powered by deep learning.</p></div>
+        <div class="feat-card"><div class="feat-icon">🌤️</div><div class="feat-name">Weather Risk Alerts</div><p class="feat-desc">Real-time weather data combined with disease risk modelling to warn you before outbreaks occur.</p></div>
+        <div class="feat-card"><div class="feat-icon">📚</div><div class="feat-name">Disease Directory</div><p class="feat-desc">Comprehensive library of 38+ crop diseases with detailed treatment and prevention guides.</p></div>
+        <div class="feat-card"><div class="feat-icon">🗺️</div><div class="feat-name">Nearby Agri Stores</div><p class="feat-desc">Find agriculture shops, fertilizer stores, and plant clinics near your location instantly.</p></div>
+        <div class="feat-card"><div class="feat-icon">📊</div><div class="feat-name">History Dashboard</div><p class="feat-desc">Track all your scans over time with beautiful charts showing disease trends on your farm.</p></div>
+        <div class="feat-card"><div class="feat-icon">🤖</div><div class="feat-name">AI Crop Assistant</div><p class="feat-desc">Chat with our AI agriculture expert for personalised crop advice and treatment recommendations.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WEATHER -->
+  <!-- WEATHER -->
+<section class="weather-sec">
+
+  <div class="w-card">
+
+    <div class="w-label" id="weather-location">
+      📍 Loading Weather...
+    </div>
+
+    <div style="display:flex;align-items:flex-end;gap:12px">
+
+      <div class="w-temp" id="weather-temp">
+        --<span class="w-unit">°C</span>
+      </div>
+
+      <div style="font-size:2.4rem;margin-bottom:6px" id="weather-icon">
+        ☁️
+      </div>
+
+    </div>
+
+    <div class="w-cond" id="weather-condition">
+      Fetching weather...
+    </div>
+
+    <div class="w-metrics">
+
+      <div>
+        <span class="w-mval" id="weather-humidity">--%</span>
+        <span class="w-mlbl">Humidity</span>
+      </div>
+
+      <div>
+        <span class="w-mval" id="weather-wind">-- km/h</span>
+        <span class="w-mlbl">Wind</span>
+      </div>
+
+      <div>
+        <span class="w-mval" id="weather-rain">--%</span>
+        <span class="w-mlbl">Rain</span>
+      </div>
+
+    </div>
+
+    <div class="risk-box" id="weather-risk">
+      Checking crop disease risk...
+    </div>
+
+  </div>
+
+</section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how-sec">
+    <div class="how-inner">
+      <div style="text-align:center;margin-bottom:.5rem">
+        <div class="eyebrow" style="justify-content:center">Process</div>
+        <h2 class="sec-h2" style="text-align:center">How it works.</h2>
+      </div>
+      <div class="how-steps">
+        <div class="how-step"><div class="step-num">01</div><div class="step-title">Upload Image</div><p class="step-desc">Take a photo of the affected leaf or upload an existing image from your device.</p></div>
+        <div class="how-step"><div class="step-num">02</div><div class="step-title">AI Analysis</div><p class="step-desc">Our deep learning model processes the image and identifies disease patterns with high confidence.</p></div>
+        <div class="how-step"><div class="step-num">03</div><div class="step-title">Get Diagnosis</div><p class="step-desc">Receive detailed disease information, confidence score, and personalised treatment recommendations.</p></div>
+        <div class="how-step"><div class="step-num">04</div><div class="step-title">Take Action</div><p class="step-desc">Follow the treatment plan, chat with our AI assistant, and track your crop health over time.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHAT SECTION -->
+  <section class="chat-sec" id="home-chat-anchor">
+    <div class="chat-inner">
+      <div>
+        <div class="eyebrow">AI Assistant</div>
+        <h2 class="sec-h2">Ask the agriculture expert.</h2>
+        <p class="sec-p">Get personalised advice on plant diseases, crop care, fertilisers, and farming best practices — available 24/7.</p>
+        <button class="quick-q" onclick="insertQ(this)">How do I treat late blight on my tomatoes? →</button>
+        <button class="quick-q" onclick="insertQ(this)">What fertiliser should I use for rice in monsoon? →</button>
+        <button class="quick-q" onclick="insertQ(this)">My wheat leaves have white spots — what disease? →</button>
+        <button class="quick-q" onclick="insertQ(this)">How do I prevent fungal disease in humid weather? →</button>
+      </div>
+      <div id="chatbox-mount"></div>
+    </div>
+  </section>
+
+  <div id="home-footer"></div>
+</div><!-- /home page -->
+
+<!-- ══════════════════════════════════════════════
+     DETECT PAGE
+══════════════════════════════════════════════ -->
+<div class="page" id="page-detect">
+  <div style="padding-top:60px;background:var(--cream-light);min-height:100vh">
+    <div style="max-width:1100px;margin:0 auto;padding:4rem 2.5rem">
+      <div style="text-align:center;margin-bottom:3rem">
+        <div class="eyebrow" style="justify-content:center">AI Detection</div>
+        <h1 class="sec-h2" style="text-align:center;font-size:clamp(2.2rem,4vw,3.2rem)">Upload a leaf, get your diagnosis.</h1>
+        <p style="color:var(--text-mid);font-size:.9rem;font-weight:300;margin-top:.5rem">
+          Powered by <strong style="font-weight:500;font-family:monospace;font-size:.85rem">plant_disease_model.h5</strong> + <strong style="font-weight:500;font-family:monospace;font-size:.85rem">class_names.json</strong> · 96%+ accuracy
+        </p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start" id="detect-page-grid">
+        <div id="detect-upload-col"></div>
+        <div id="detect-result-col">
+          <div style="background:var(--cream);border:1.5px dashed var(--border);border-radius:var(--r20);padding:4rem 2rem;text-align:center">
+            <div style="font-size:2.5rem;margin-bottom:1rem;opacity:.4">🔬</div>
+            <div style="color:var(--text-light);font-size:.88rem;font-weight:300">Upload a leaf image and click Analyse to see your AI diagnosis here.</div>
+          </div>
+          <div id="detect-model-info-col"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="detect-footer"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     DIRECTORY PAGE
+══════════════════════════════════════════════ -->
+<div class="page" id="page-directory">
+  <div class="dir-page">
+    <div class="dir-top">
+      <div class="dir-top-inner">
+        <div class="eyebrow">Disease Library</div>
+        <h1 class="sec-h2">Disease Directory</h1>
+        <p class="sec-p" style="margin-bottom:0;max-width:480px">14 diseases catalogued with full pathogen details, treatment protocols, and prevention strategies.</p>
+        <div class="search-row">
+          <input type="text" class="search-box" id="dir-search" placeholder="Search by disease, plant, or pathogen…" oninput="renderDirectory()">
+          <div class="filter-tabs" id="filter-tabs">
+            <button class="ftab on" data-cat="All" onclick="setDirFilter(this)">All</button>
+            <button class="ftab" data-cat="Fungal" onclick="setDirFilter(this)">Fungal</button>
+            <button class="ftab" data-cat="Bacterial" onclick="setDirFilter(this)">Bacterial</button>
+            <button class="ftab" data-cat="Viral" onclick="setDirFilter(this)">Viral</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dir-grid" id="dir-grid"></div>
+  </div>
+  <div id="dir-footer"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     DETAIL PAGE
+══════════════════════════════════════════════ -->
+<div class="page" id="page-detail">
+  <div class="detail-page">
+    <div class="detail-top">
+      <div class="detail-inner" id="detail-content"></div>
+    </div>
+    <div class="detail-body" id="detail-body"></div>
+  </div>
+  <div id="detail-footer"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     DASHBOARD PAGE
+══════════════════════════════════════════════ -->
+<div class="page" id="page-dashboard">
+  <div class="dash-page">
+    <div class="dash-top">
+      <div class="dash-inner">
+        <div class="eyebrow">Overview</div>
+        <h1 class="sec-h2">Dashboard</h1>
+        <p class="sec-p" style="margin-bottom:1.5rem">Track your scan history, crop health metrics, and weather-based disease risk.</p>
+        <div class="dash-stat-grid" id="dash-stats"></div>
+      </div>
+    </div>
+    <div class="dash-main" id="dash-main"></div>
+  </div>
+  <div id="dash-footer"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     CHAT PAGE
+══════════════════════════════════════════════ -->
+<div class="page" id="page-chat">
+  <div style="padding-top:60px;background:var(--cream-light);min-height:100vh">
+    <div class="chat-inner" style="max-width:1100px;margin:0 auto;padding:4rem 2.5rem">
+      <div>
+        <div class="eyebrow">AI Assistant</div>
+        <h1 class="sec-h2">Agriculture Expert</h1>
+        <p class="sec-p">Ask anything about plant diseases, treatment protocols, fertilisers, and farming best practices — powered by AI.</p>
+        <p style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:.75rem">Quick questions</p>
+        <button class="quick-q" onclick="insertQ(this)">How do I treat late blight on my tomatoes? →</button>
+        <button class="quick-q" onclick="insertQ(this)">What fertiliser should I use for rice in monsoon? →</button>
+        <button class="quick-q" onclick="insertQ(this)">My wheat leaves have white spots — what disease? →</button>
+        <button class="quick-q" onclick="insertQ(this)">How do I prevent fungal disease in humid weather? →</button>
+        <button class="quick-q" onclick="insertQ(this)">Best organic pesticide for vegetable crops? →</button>
+      </div>
+      <div id="chat-page-mount"></div>
+    </div>
+  </div>
+  <div id="chat-footer"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     ABOUT PAGE
+══════════════════════════════════════════════ -->
+<div class="page" id="page-about">
+  <div class="about-page">
+    <div class="about-top">
+      <div class="about-inner">
+        <div class="eyebrow">About</div>
+        <h1 class="sec-h2">Built for farmers,<br><em style="font-style:italic;color:var(--leaf)">powered by AI.</em></h1>
+        <p class="sec-p" style="margin-bottom:0;max-width:520px">PlantCare AI is an open agricultural intelligence platform connecting deep learning with the real needs of crop farmers.</p>
+      </div>
+    </div>
+    <div class="about-body">
+      <div class="about-card"><div class="about-card-title">The Problem</div><p class="about-card-text">Plant diseases cause 20–40% of global crop losses annually, costing farmers hundreds of billions of dollars. Early detection is the single most effective intervention — but most farmers lack access to affordable, fast expert diagnosis when they need it most.</p></div>
+      <div class="about-card"><div class="about-card-title">Our Solution</div><p class="about-card-text">PlantCare AI uses deep learning (TensorFlow/Keras) trained on thousands of annotated leaf images to identify 38+ plant diseases across 12 major crop types. Upload a single photo and receive expert-level diagnosis in under 5 seconds, free of charge.</p></div>
+      <div class="about-card"><div class="about-card-title">Model Integration</div><p class="about-card-text">The core model <code style="background:var(--cream-mid);padding:2px 6px;border-radius:4px;font-size:.82rem">plant_disease_model.h5</code> is a convolutional neural network trained on the PlantVillage dataset. Class labels are loaded dynamically from <code style="background:var(--cream-mid);padding:2px 6px;border-radius:4px;font-size:.82rem">class_names.json</code>, enabling easy expansion to new diseases without code changes. The Flask backend loads the model at startup, preprocesses images to 128×128 px, and returns predictions to the frontend via <code style="background:var(--cream-mid);padding:2px 6px;border-radius:4px;font-size:.82rem">POST /predict</code>.</p></div>
+      <div class="about-card">
+        <div class="about-card-title">Tech Stack</div>
+        <div class="tech-grid">
+          <div><div class="tech-lbl">Frontend</div><div class="tech-val">HTML · CSS · Vanilla JS</div></div>
+          <div><div class="tech-lbl">Backend</div><div class="tech-val">Flask · Flask-CORS</div></div>
+          <div><div class="tech-lbl">AI Model</div><div class="tech-val">TensorFlow · Keras</div></div>
+          <div><div class="tech-lbl">Model File</div><div class="tech-val" style="font-family:monospace;font-size:.78rem">plant_disease_model.h5</div></div>
+          <div><div class="tech-lbl">Classes</div><div class="tech-val" style="font-family:monospace;font-size:.78rem">class_names.json</div></div>
+          <div><div class="tech-lbl">Database</div><div class="tech-val">SQLite</div></div>
+        </div>
+      </div>
+      <div class="about-card">
+        <div class="about-card-title">Setup Instructions</div>
+        <p class="about-card-text">
+          1. Place <code style="background:var(--cream-mid);padding:2px 6px;border-radius:4px;font-size:.82rem">plant_disease_model.h5</code> and <code style="background:var(--cream-mid);padding:2px 6px;border-radius:4px;font-size:.82rem">class_names.json</code> alongside <code style="background:var(--cream-mid);padding:2px 6px;border-radius:4px;font-size:.82rem">app.py</code> and <code style="background:var(--cream-mid);padding:2px 6px;border-radius:4px;font-size:.82rem">index.html</code>.<br><br>
+          2. Install dependencies: <code style="background:var(--cream-mid);padding:2px 6px;border-radius:4px;font-size:.82rem">pip install flask flask-cors tensorflow pillow numpy</code><br><br>
+          3. Run: <code style="background:var(--cream-mid);padding:2px 6px;border-radius:4px;font-size:.82rem">python app.py</code><br><br>
+          4. Open <code style="background:var(--cream-mid);padding:2px 6px;border-radius:4px;font-size:.82rem">http://localhost:5000</code> in your browser.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div id="about-footer"></div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════ -->
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+const API = 'http://127.0.0.1:8000/api';  // Flask backend URL
+
+// ─── DISEASE DATA ─────────────────────────────────────────────────────────────
+const DISEASES = [
+  {id:1,name:'Late Blight',plant:'Tomato',emoji:'🍅',severity:'High',sev:'H',cat:'Fungal',
+   pathogen:'Phytophthora infestans',
+   desc:'Late blight is one of the most destructive plant diseases in history, causing the Irish Potato Famine in the 1840s. It spreads with alarming speed in cool, humid conditions and can destroy an entire crop within days if untreated.',
+   symptoms:['Water-soaked, greasy-looking dark lesions on leaves','White mold growth on leaf undersides in humid conditions','Brown, firm rot on stems turning black','Fruit develops brown, firm rot starting at stem end'],
+   causes:['Cool temperatures (10–20°C) combined with high humidity >90%','Overhead irrigation wetting foliage','Poor air circulation in dense plantings','Infected seed tubers or transplants'],
+   prevention:['Plant disease-resistant varieties (e.g., Defiant, Iron Lady)','Avoid overhead irrigation — water at soil level only','Space plants 60–90 cm apart for airflow','Apply preventive copper-based fungicide before symptoms appear','Destroy all crop debris at season end'],
+   treatment:['Apply mancozeb 75% WP at 2.5 g/L water every 7 days','Use metalaxyl + mancozeb (Ridomil Gold) for systemic control','Remove and destroy all infected plant parts immediately','Switch to alternate fungicide classes to avoid resistance'],
+   affected:['Tomato','Potato','Pepper','Eggplant'],
+   care:'Begin fungicide program preventively before disease season. Scout twice weekly during warm, humid periods. Maintain spray intervals of 5–7 days during active outbreaks.'},
+
+  {id:2,name:'Powdery Mildew',plant:'Wheat',emoji:'🌾',severity:'Medium',sev:'M',cat:'Fungal',
+   pathogen:'Blumeria graminis f.sp. tritici',
+   desc:'Powdery mildew is a highly visible fungal disease characterised by white powdery colonies on leaf surfaces. While it rarely kills plants outright, it significantly reduces photosynthesis and yield quality.',
+   symptoms:['White to gray powdery spots on upper leaf surfaces','Yellowing and browning of heavily infected leaves','Stunted growth and reduced tillering in wheat','Premature leaf senescence'],
+   causes:['Warm days with cool nights (15–22°C optimal)','High relative humidity without leaf wetness','Dense plantings with poor air circulation','Excessive nitrogen application promoting lush growth'],
+   prevention:['Plant resistant varieties suited to your region','Avoid excessive nitrogen fertilisation','Ensure adequate plant spacing','Remove crop debris after harvest'],
+   treatment:['Apply wettable sulfur (3 g/L) at first sign of infection','Use propiconazole 25% EC at 0.1% concentration','Tebuconazole + trifloxystrobin for dual-mode control','Repeat applications every 14 days'],
+   affected:['Wheat','Barley','Oats','Cucumbers','Grapes'],
+   care:'Monitor from jointing stage onwards. Two well-timed sprays (at first symptoms and 14 days later) generally provide adequate control.'},
+
+  {id:3,name:'Bacterial Blight',plant:'Rice',emoji:'🌾',severity:'High',sev:'H',cat:'Bacterial',
+   pathogen:'Xanthomonas oryzae pv. oryzae',
+   desc:'Bacterial blight is the most serious bacterial disease of rice worldwide. It spreads through water, rain splash, and infected plant material, causing significant yield losses especially in high-yielding varieties.',
+   symptoms:['Water-soaked, translucent lesions on leaf margins','Lesions turn yellow then straw-coloured with wavy margins','Milky bacterial ooze visible on cut stems','Wilting and drying of entire tillers (kresek phase)'],
+   causes:['Tropical warm temperatures (25–34°C)','High humidity and heavy rainfall','Wind-driven rain spreading bacteria','Excessive nitrogen fertiliser application','Infected planting material'],
+   prevention:['Plant certified disease-free seeds','Use resistant rice varieties','Drain fields during active infection','Avoid excessive nitrogen application','Maintain field sanitation'],
+   treatment:['Apply copper oxychloride (3 g/L) as foliar spray','Streptomycin sulfate (0.02%) for severe cases','Remove and burn heavily infected plants','No curative treatment — prevention is critical'],
+   affected:['Rice','Wild rice relatives'],
+   care:'Seed treatment with copper-based bactericide before planting. Scout regularly during vegetative stages. Avoid entering fields when wet to prevent mechanical spread.'},
+
+  {id:4,name:'Early Blight',plant:'Tomato',emoji:'🍅',severity:'Medium',sev:'M',cat:'Fungal',
+   pathogen:'Alternaria solani',
+   desc:'Early blight is a common soilborne fungal disease that first attacks older, lower leaves. While less dramatic than late blight, it causes significant defoliation and fruit exposure, reducing marketable yield.',
+   symptoms:["Dark brown spots with concentric rings (bull's-eye pattern)",'Yellow halo surrounding each lesion','Lesions begin on oldest lower leaves, progressing upward','Stem lesions near soil level (collar rot on seedlings)'],
+   causes:['Warm temperatures (24–29°C)','Alternating wet and dry periods','Soilborne spores splashing onto lower leaves','Plant stress from nutrient deficiency or drought'],
+   prevention:['Mulch soil to prevent spore splashing','Water at plant base, not overhead','Remove infected lower leaves immediately','Maintain plant nutrition, especially calcium'],
+   treatment:['Apply chlorothalonil 75% WP (2 g/L) preventively','Copper fungicide (3 g/L) as organic option','Difenoconazole for established infections','Spray every 7–10 days during humid conditions'],
+   affected:['Tomato','Potato','Pepper'],
+   care:'Remove lower leaves touching the soil. Stake or cage plants for airflow. Begin fungicide sprays preventively, especially after transplanting.'},
+
+  {id:5,name:'Leaf Curl Virus',plant:'Tomato',emoji:'🍅',severity:'High',sev:'H',cat:'Viral',
+   pathogen:'Tomato Yellow Leaf Curl Virus (TYLCV)',
+   desc:'TYLCV is transmitted by whiteflies and causes severe stunting and yield loss. Infected plants rarely recover and must be removed to prevent spread. One of the most economically important tomato viruses globally.',
+   symptoms:['Upward curling and cupping of leaves','Yellowing of leaf margins and interveinal areas','Severe stunting of the entire plant','Flower drop and drastically reduced fruit set'],
+   causes:['Whitefly (Bemisia tabaci) transmission','Virus persists in whitefly population','High whitefly populations in warm seasons','Movement from nearby infected crops'],
+   prevention:['Use TYLCV-resistant varieties','Install 40-mesh insect-proof nets in nurseries','Apply reflective silver mulch to repel whiteflies','Use yellow sticky traps for whitefly monitoring'],
+   treatment:['No cure — infected plants must be removed and destroyed','Control whitefly vectors with imidacloprid or thiamethoxam','Neem oil sprays reduce whitefly populations','Mineral oil sprays can reduce virus transmission'],
+   affected:['Tomato','Bean','Pepper','Cassava'],
+   care:'Prevention is the only strategy. Establish whitefly-free nurseries. Remove infected plants within days of symptom appearance to limit spread.'},
+
+  {id:6,name:'Anthracnose',plant:'Mango',emoji:'🥭',severity:'Medium',sev:'M',cat:'Fungal',
+   pathogen:'Colletotrichum gloeosporioides',
+   desc:'Anthracnose is the most important post-harvest disease of mango and also causes significant pre-harvest losses. It can destroy entire harvests when conditions favour its development during flowering and fruiting.',
+   symptoms:['Black, irregular spots on leaves and young shoots','Sunken dark lesions on fruit that expand rapidly','Flower blight causing flower drop in wet weather','Post-harvest fruit rot appearing days after harvest'],
+   causes:['Warm temperatures (25–30°C) with rainfall or high humidity','Extended wetness on plant surfaces','Dense canopy trapping moisture','Wounds from insects or mechanical damage'],
+   prevention:['Prune to open canopy and improve airflow','Avoid wetting foliage during irrigation','Apply preventive fungicide before and during flowering','Harvest at correct maturity and handle carefully'],
+   treatment:['Propiconazole 25% EC (1 ml/L) during flowering period','Mancozeb 75% WP (2.5 g/L) for early infections','Post-harvest hot water treatment (52°C for 5 minutes)','Carbendazim dip for harvested fruit'],
+   affected:['Mango','Avocado','Papaya','Banana','Chilli'],
+   care:'Begin spray program at early flower bud stage. Critical spray timing: pre-flowering, full bloom, and fruit set. Post-harvest treatments are essential for export quality.'},
+
+  {id:7,name:'Downy Mildew',plant:'Grape',emoji:'🍇',severity:'High',sev:'H',cat:'Fungal',
+   pathogen:'Plasmopara viticola',
+   desc:'Downy mildew can devastate vineyards within a single season if conditions are favourable. Unlike powdery mildew, it requires leaf wetness and can travel long distances via infected plant material.',
+   symptoms:['Yellow oil spots on upper leaf surface','White cottony sporulation on leaf undersides','Infected berries turn brown and shrivel','Shoot tips and tendrils may die back'],
+   causes:['Temperatures above 10°C with rainfall >10 mm','Extended leaf wetness periods (3+ hours)','High humidity in dense canopy','Rain splash spreading spores'],
+   prevention:['Remove infected leaves and shoots promptly','Train vines to improve air circulation','Avoid overhead irrigation in vineyards','Apply preventive sprays before rain events'],
+   treatment:['Copper hydroxide (2 g/L) as preventive protectant','Fosetyl-aluminum for systemic control','Cymoxanil + mancozeb for curative-preventive action','Rotate fungicide classes to manage resistance'],
+   affected:['Grape','Cucumber','Melon','Lettuce','Basil'],
+   care:'Follow disease forecast models for spray timing. First spray when shoot growth is 10 cm. Critical period is from fruit set to veraison.'},
+
+  {id:8,name:'Root Rot',plant:'Soybean',emoji:'🌱',severity:'High',sev:'H',cat:'Fungal',
+   pathogen:'Fusarium solani / Phytophthora sojae',
+   desc:'Root rot complex in soybean can cause catastrophic losses, particularly in wet, compacted soils. Plants may appear healthy above ground until root damage is severe enough to cause sudden wilting.',
+   symptoms:['Brown to black discolouration of roots and lower stem','Sudden wilting despite adequate soil moisture','Stunted plants with yellow leaves','Poor nodulation on affected root systems'],
+   causes:['Poorly drained, waterlogged soils','Soil compaction reducing oxygen','Cool wet conditions at planting','Continuous soybean cropping without rotation'],
+   prevention:['Improve field drainage before planting','Avoid soil compaction with heavy machinery','Rotate with non-host crops for 2–3 years','Plant only in well-drained, properly prepared soils'],
+   treatment:['Seed treatment with metalaxyl or thiram','Plant tolerant varieties where disease is chronic','Improve drainage through tiling or bedding','Biological seed treatments with Trichoderma sp.'],
+   affected:['Soybean','Corn','Cotton','Sunflower'],
+   care:'Prevention through drainage and soil management is far more effective than any curative measure. Scout fields 2–3 weeks after emergence for early signs.'},
+
+  {id:9,name:'Mosaic Virus',plant:'Cucumber',emoji:'🥒',severity:'Medium',sev:'M',cat:'Viral',
+   pathogen:'Cucumber Mosaic Virus (CMV)',
+   desc:'CMV has the widest host range of any plant virus, infecting over 1,200 plant species. It is transmitted by more than 80 aphid species and spreads rapidly through agricultural landscapes.',
+   symptoms:['Light and dark green mottled mosaic pattern on leaves','Distorted, puckered, or blistered leaf surface','Stunted plant growth with shortened internodes','Distorted, mottled, or bitter-tasting fruit'],
+   causes:['Aphid transmission (non-persistent, rapid acquisition)','Mechanical transmission through contaminated tools','Infected pollen or seed in some hosts','Proximity to infected ornamental or weed hosts'],
+   prevention:['Plant CMV-resistant varieties','Control aphid populations with reflective mulches','Remove and destroy infected plants immediately','Eliminate weed hosts around crop area'],
+   treatment:['No cure exists — prevention is essential','Mineral oil sprays reduce aphid transmission efficiency','Thiamethoxam or pymetrozine for aphid vector control','Remove infected plants within days of diagnosis'],
+   affected:['Cucumber','Tomato','Pepper','Melon','Squash','Spinach'],
+   care:'Install insect-proof nets in nurseries. Monitor aphid populations from crop establishment. Early rouging of infected plants is the most effective management strategy.'},
+
+  {id:10,name:'Wheat Rust',plant:'Wheat',emoji:'🌾',severity:'High',sev:'H',cat:'Fungal',
+   pathogen:'Puccinia striiformis / Puccinia tritici',
+   desc:'Wheat rust diseases are among the most feared agricultural pathogens. New virulent races like Ug99 have overcome resistance in most commercial varieties and can travel thousands of kilometres on air currents.',
+   symptoms:['Yellow, orange, or reddish-brown pustules on leaves and stems','Pustules arranged in stripes (yellow rust) or scattered (leaf rust)','Heavy infections cause leaves to dry and shred','Stem rust causes diamond-shaped pustules on stems'],
+   causes:['Cool moist conditions for yellow rust (10–15°C)','Warmer conditions for leaf and stem rust (20–25°C)','Airborne urediniospores travelling long distances','Susceptible varieties in continuous wheat cropping'],
+   prevention:['Grow rust-resistant varieties (consult regional advisories)','Avoid early sowing in rust-prone seasons','Monitor national rust warning systems','Apply preventive triazole fungicide at flag leaf stage'],
+   treatment:['Propiconazole 25% EC (1 ml/L) — highly effective','Tebuconazole 250 g/L EC for established infections','Azoxystrobin + propiconazole for combined protection','Spray at first symptom — do not delay'],
+   affected:['Wheat','Barley','Oats','Rye','Triticale'],
+   care:'Scout weekly from tillering onwards. Flag leaf and ear are critical protection periods. One well-timed spray at flag leaf emergence prevents most yield loss.'},
+
+  {id:11,name:'Black Sigatoka',plant:'Banana',emoji:'🍌',severity:'High',sev:'H',cat:'Fungal',
+   pathogen:'Mycosphaerella fijiensis',
+   desc:'Black Sigatoka is the most economically important disease of banana globally, capable of reducing photosynthetic capacity by 50% and requiring frequent fungicide applications in commercial plantations.',
+   symptoms:['Small pale yellow streaks on lower leaf surfaces','Streaks enlarge into dark brown to black elliptical spots','Grey centre with dark border and yellow halo in mature lesions','Premature leaf death and drastically reduced bunch size'],
+   causes:['Warm temperatures (25–28°C) with high humidity','Frequent rainfall ensuring extended leaf wetness','Dense plantations with poor air movement','Airborne spore dispersal from infected leaves'],
+   prevention:['Remove infected leaves below youngest infected leaf level','Improve drainage and reduce humidity in plantation','Use plastic mulch to prevent soil splash','Select tolerant varieties where available'],
+   treatment:['Mancozeb 80% WP (2.5 g/L) every 7–14 days','Propiconazole + chlorothalonil combination sprays','Aerial application for large commercial plantations','Strict rotation of fungicide groups to manage resistance'],
+   affected:['Banana','Plantain'],
+   care:'Requires a disease management calendar with year-round fungicide program. Leaf removal is a non-negotiable cultural practice. Critical to rotate among fungicide groups.'},
+
+  {id:12,name:'Damping Off',plant:'Seedlings',emoji:'🌱',severity:'Medium',sev:'M',cat:'Fungal',
+   pathogen:'Pythium spp. / Rhizoctonia solani',
+   desc:'Damping off is devastating in nurseries and seed beds, killing seedlings before or shortly after emergence. High soil moisture and poor drainage create ideal conditions for rapid outbreak.',
+   symptoms:['Seeds fail to germinate (pre-emergence damping off)','Seedlings emerge then collapse at soil level','Water-soaked, brown or black lesion at stem base','Root system turns brown and mushy'],
+   causes:['Overwatering and poorly drained growing media','Cool to moderate soil temperatures (15–20°C)','High soil moisture and density','Contaminated seed, tools, or growing media'],
+   prevention:['Use sterile, well-draining potting mix','Water seedlings only when needed, never overwater','Ensure good air circulation in nurseries','Use treated seeds and clean containers'],
+   treatment:['Apply metalaxyl or mefenoxam to growing media','Drench with copper hydroxide solution','Reduce watering immediately on symptom appearance','Remove and destroy all affected plants and media'],
+   affected:['All vegetable seedlings','Flower seedlings','Forest nurseries'],
+   care:'Prevention through proper nursery management is essential. Once outbreak occurs, remove all affected material. Sterilise containers between uses with dilute bleach solution.'},
+
+  {id:13,name:'Septoria Leaf Spot',plant:'Tomato',emoji:'🍅',severity:'Medium',sev:'M',cat:'Fungal',
+   pathogen:'Septoria lycopersici',
+   desc:'Septoria leaf spot is one of the most common tomato diseases, causing circular spots on lower leaves that progressively defoliate the plant upward, reducing yield through sun exposure and secondary rot.',
+   symptoms:['Small circular spots with dark borders and tan centres','Tiny black pycnidia visible in lesion centres under magnification','Yellowing leaves progressing upward from base','Severe defoliation reducing fruit quality and marketability'],
+   causes:['Warm temperatures (20–25°C) with leaf wetness','Overhead irrigation spreading spores','Soilborne spores splashing onto lower leaves','Dense plantings trapping moisture'],
+   prevention:['Remove infected lower leaves weekly','Avoid overhead watering','Mulch soil to reduce spore splash','Use disease-free transplants and certified seeds'],
+   treatment:['Apply chlorothalonil, copper, or mancozeb every 7–10 days','Difenoconazole for curative control','Maintain thorough spray coverage on lower leaves','Remove heavily infected leaves before spraying'],
+   affected:['Tomato','Wheat','Celery'],
+   care:'Remove lower leaves touching the soil. Begin fungicide program at transplant. Maintain spray schedule throughout humid growing periods, especially after rain.'},
+
+  {id:14,name:'Fusarium Wilt',plant:'Tomato',emoji:'🍅',severity:'High',sev:'H',cat:'Fungal',
+   pathogen:'Fusarium oxysporum f.sp. lycopersici',
+   desc:'Fusarium wilt is a devastating soilborne fungal disease causing vascular browning and sudden plant collapse. Once a field is infested, the pathogen persists in soil for decades.',
+   symptoms:['Yellowing starting on one side of the plant only','Vascular browning visible on cut stems','Sudden wilting of the entire plant despite adequate moisture','Root system becomes brown and decayed'],
+   causes:['Soilborne fungus surviving for years in infected soil','Warm soil temperatures (25–30°C)','Mechanical injury to roots','Continuous cropping without rotation'],
+   prevention:['Plant Fusarium-resistant varieties','Raise soil pH to 6.5–7.0 with lime','Avoid mechanical root damage','Practice strict crop rotation with non-host crops'],
+   treatment:['No curative treatment — remove infected plants immediately','Soil solarisation reduces inoculum in infested fields','Apply Trichoderma-based biocontrol as preventive soil drench','Improve drainage and soil structure'],
+   affected:['Tomato','Banana','Cotton','Melon'],
+   care:'Once confirmed, remove all infected plants and avoid replanting susceptible crops in the same area for at least 3 years. Grafting on resistant rootstocks is the most reliable long-term solution.'}
+];
+
+let dirFilter = 'All';
+let currentFile = null;
+let currentPreview = null;
+let chatHistory = [];
+
+// ─── PAGE ROUTING ─────────────────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.nav-btn:not(.nav-cta)').forEach(b => b.classList.remove('active'));
+  const nb = document.getElementById('nb-' + id);
+  if (nb) nb.classList.add('active');
+  window.scrollTo(0, 0);
+
+  if (id === 'home')      { renderHomeDCards(); renderHomeStats(); mountDetectWidget('detect-widget-home','detect-result-home'); mountChatbox('chatbox-mount'); renderFooter('home-footer'); }
+  if (id === 'detect')    { mountDetectWidget('detect-upload-col','detect-result-col',true); renderFooter('detect-footer'); }
+  if (id === 'directory') { renderDirectory(); renderFooter('dir-footer'); }
+  if (id === 'dashboard') { renderDashboard(); renderFooter('dash-footer'); }
+  if (id === 'chat')      { mountChatbox('chat-page-mount'); renderFooter('chat-footer'); }
+  if (id === 'about')     { renderFooter('about-footer'); }
+}
+
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+function toast(msg, ms=3200) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.style.display='none', ms);
+}
+
+// ─── HOME DISEASE CARDS ───────────────────────────────────────────────────────
+function renderHomeDCards() {
+  const el = document.getElementById('home-d-cards');
+  if (!el || el.dataset.rendered) return;
+  el.dataset.rendered = '1';
+  el.innerHTML = DISEASES.slice(0,4).map(d => `
+    <div class="d-card" onclick="showDetail(${d.id})">
+      <div class="d-card-img">
+        ${d.emoji}
+        <div class="sev-pill sev-${d.sev}">${d.severity}</div>
+      </div>
+      <div class="d-card-body">
+        <div class="d-card-name">${d.name}</div>
+        <div class="d-card-plant">${d.plant}</div>
+      </div>
+      <button class="d-card-arrow" onclick="event.stopPropagation();showDetail(${d.id})">→</button>
+    </div>`).join('');
+}
+
+// ─── HOME STATS ───────────────────────────────────────────────────────────────
+async function renderHomeStats() {
+  try {
+    const r = await fetch(API+'/stats');
+    if (!r.ok) return;
+    const s = await r.json();
+    document.getElementById('hsr-total').textContent    = s.total    || 0;
+    document.getElementById('hsr-diseased').textContent = s.diseased || 0;
+    document.getElementById('hsr-healthy').textContent  = s.healthy  || 0;
+    document.getElementById('hsr-top').textContent      = s.top_disease || '—';
+    const pct = s.total > 0 ? Math.round((s.healthy/s.total)*100) : 0;
+    document.getElementById('hsr-pct').textContent = pct+'%';
+    setTimeout(() => { const b=document.getElementById('hsr-bar'); if(b) b.style.width=pct+'%'; }, 300);
+  } catch {}
+}
+
+// ─── STRIP TABS ───────────────────────────────────────────────────────────────
+function setStripTab(el) {
+  document.querySelectorAll('.strip-tab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+}
+
+// ─── DETECT WIDGET ───────────────────────────────────────────────────────────
+function mountDetectWidget(uploadId, resultId, fullPage=false) {
+  const uEl = document.getElementById(uploadId);
+  if (!uEl || uEl.dataset.mounted) return;
+  uEl.dataset.mounted = '1';
+
+  uEl.innerHTML = `
+    <div class="upload-zone" id="uz-${uploadId}" onclick="document.getElementById('fi-${uploadId}').click()"
+         ondragover="event.preventDefault();this.classList.add('drag')"
+         ondragleave="this.classList.remove('drag')"
+         ondrop="handleDrop(event,'${uploadId}','${resultId}')">
+      <div id="uz-inner-${uploadId}">
+        <div class="upload-icon">🌿</div>
+        <div class="upload-h">Drop your leaf image</div>
+        <div class="upload-sub">Drag &amp; drop or click to select · JPG, PNG, WEBP up to 10MB</div>
+        <div class="upload-or">— or —</div>
+        <button class="btn-choose" onclick="event.stopPropagation();document.getElementById('fi-${uploadId}').click()">Choose Image</button>
+      </div>
+      <img id="prev-${uploadId}" style="max-width:100%;border-radius:16px;margin-top:.75rem;display:none;object-fit:cover;max-height:320px">
+    </div>
+    <input type="file" id="fi-${uploadId}" accept="image/*" style="display:none" onchange="handleFileInput(this,'${uploadId}','${resultId}')">
+    <button class="btn-analyse" id="ba-${uploadId}" onclick="runAnalysis('${uploadId}','${resultId}')">🔬 Analyse Leaf</button>
+    <button class="btn-reset" id="br-${uploadId}" onclick="resetUpload('${uploadId}','${resultId}')">Reset</button>`;
+
+  // Model info panel
+  const mEl = document.getElementById(uploadId === 'detect-widget-home' ? 'detect-widget-home' : resultId === 'detect-result-col' ? 'detect-model-info-col' : '');
+  const infoTarget = fullPage ? document.getElementById('detect-model-info-col') : null;
+  const infoHTML = `
+    <div class="model-info" style="margin-top:1.5rem">
+      <div class="model-info-title">Model Info</div>
+      <div class="model-row"><span class="model-k">Model File</span><span class="model-v">plant_disease_model.h5</span></div>
+      <div class="model-row"><span class="model-k">Classes File</span><span class="model-v">class_names.json</span></div>
+      <div class="model-row"><span class="model-k">Input Size</span><span class="model-v">224×224 px</span></div>
+      <div class="model-row"><span class="model-k">Framework</span><span class="model-v">TensorFlow / Keras</span></div>
+      <div class="model-row"><span class="model-k">API Endpoint</span><span class="model-v">POST /api/predict</span></div>
+      <div class="model-row"><span class="model-k">Backend</span><span class="model-v">FastAPI (localhost:8000)</span></div>
+    </div>`;
+  if (infoTarget) infoTarget.innerHTML = infoHTML;
+  else uEl.insertAdjacentHTML('beforeend', infoHTML);
+}
+
+function handleDrop(e, uid, rid) {
+  e.preventDefault();
+  document.getElementById('uz-'+uid).classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) setFile(f, uid, rid);
+}
+
+function handleFileInput(inp, uid, rid) {
+  if (inp.files[0]) setFile(inp.files[0], uid, rid);
+}
+
+function setFile(file, uid, rid) {
+  currentFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    currentPreview = e.target.result;
+    document.getElementById('uz-inner-'+uid).style.display = 'none';
+    const img = document.getElementById('prev-'+uid);
+    img.src = e.target.result;
+    img.style.display = 'block';
+    document.getElementById('ba-'+uid).style.display = 'block';
+    document.getElementById('br-'+uid).style.display = 'block';
+    // Clear result
+    const rEl = document.getElementById(rid);
+    if (rEl) rEl.innerHTML = `<div style="background:var(--cream);border:1.5px dashed var(--border);border-radius:var(--r20);padding:3rem 2rem;text-align:center;color:var(--text-light);font-size:.87rem;font-weight:300">Click Analyse to get your AI diagnosis.</div>`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetUpload(uid, rid) {
+  currentFile = null;
+  currentPreview = null;
+  document.getElementById('uz-inner-'+uid).style.display = 'block';
+  const img = document.getElementById('prev-'+uid);
+  img.style.display = 'none';
+  img.src = '';
+  document.getElementById('ba-'+uid).style.display = 'none';
+  document.getElementById('br-'+uid).style.display = 'none';
+  document.getElementById('fi-'+uid).value = '';
+  const rEl = document.getElementById(rid);
+  if (rEl) rEl.innerHTML = `<div style="background:var(--cream);border:1.5px dashed var(--border);border-radius:var(--r20);padding:4rem 2rem;text-align:center;color:var(--text-light);font-size:.87rem;font-weight:300">Upload a leaf image and click Analyse to see your AI diagnosis here.</div>`;
+}
+
+async function runAnalysis(uid, rid) {
+  if (!currentFile) return;
+  const btn = document.getElementById('ba-'+uid);
+  btn.disabled = true;
+  btn.textContent = 'Analysing…';
+
+  const rEl = document.getElementById(rid);
+  if (rEl) rEl.innerHTML = `<div class="result-panel" style="display:block"><div class="spinner-wrap"><div class="spinner"></div></div><div style="text-align:center;color:rgba(255,255,255,.5);font-size:.84rem;padding-bottom:1.5rem;font-weight:300">Analysing leaf image…</div></div>`;
+
+  try {
+    const fd = new FormData();
+    fd.append('file', currentFile);
+    const resp = await fetch(API+'/predict', { method:'POST', body:fd });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+    showResult(data, rid, uid);
+    toast('✓ Analysis complete — ' + data.disease);
+  } catch(err) {
+    // Demo fallback
+    const demos = [
+      {disease:'Late Blight',plant:'Tomato',confidence:94.3,severity:'High',
+       description:'Late blight caused by Phytophthora infestans. Spreads rapidly in cool humid conditions and can devastate an entire crop within days.',
+       treatment:'Apply mancozeb 75% WP at 2.5 g/L every 7 days. Remove infected material immediately.',
+       symptoms:['Water-soaked lesions on leaves','White mold on leaf undersides','Brown stem rot'],
+       prevention:['Avoid overhead irrigation','Use resistant varieties','Space plants for airflow'],demo_mode:true},
+      {disease:'Healthy Leaf',plant:'General',confidence:97.1,severity:'None',
+       description:'No disease detected. The leaf appears to be in excellent health.',
+       treatment:'No treatment needed. Continue current care practices.',
+       symptoms:[],prevention:['Regular monitoring','Balanced nutrition'],demo_mode:true},
+      {disease:'Powdery Mildew',plant:'Wheat',confidence:88.7,severity:'Medium',
+       description:'Powdery mildew — white powdery coating on leaves reduces photosynthesis.',
+       treatment:'Apply wettable sulfur (3 g/L) every 14 days.',
+       symptoms:['White powdery spots','Yellowing leaves'],
+       prevention:['Plant resistant varieties','Good spacing'],demo_mode:true}
+    ];
+    const d = demos[Math.floor(Math.random()*demos.length)];
+    showResult(d, rid, uid);
+    toast('⚠ Backend not connected — showing demo result');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🔬 Analyse Again';
+}
+
+function showResult(r, rid, uid) {
+  const sevColor = r.severity==='High'?'#ff9090':r.severity==='Medium'?'#f5c870':r.severity==='None'?'#80d494':'#80d494';
+  const isHealthy = r.severity === 'None';
+  const rEl = document.getElementById(rid);
+  if (!rEl) return;
+  rEl.innerHTML = `
+    <div class="result-panel" style="display:block">
+      ${r.demo_mode?`<div style="background:rgba(240,160,40,.1);border:1px solid rgba(240,160,40,.2);border-radius:8px;padding:7px 12px;font-size:.77rem;color:rgba(240,180,80,.9);margin-bottom:1rem">⚠ Demo mode — backend not connected. Start Flask server to use real model.</div>`:''}
+      <div class="r-top">
+        <div>
+          <div class="r-status" style="color:${isHealthy?'#80d494':'#f5c870'}">${isHealthy?'✓ Healthy Plant':'⚠ Disease Detected'}</div>
+          <div class="r-name">${r.disease}</div>
+          <div class="r-plant">Detected in: ${r.plant}</div>
+        </div>
+        <div>
+          <div class="r-conf-num" style="color:${sevColor}">${r.confidence.toFixed(1)}%</div>
+          <div class="r-conf-lbl">Confidence</div>
+        </div>
+      </div>
+      ${!isHealthy?`<div class="r-sev-row">Severity: <span class="sev-badge-sm" style="background:${r.severity==='High'?'rgba(220,80,80,.2)':'rgba(220,160,60,.2)'};color:${sevColor}">${r.severity}</span></div>`:''}
+      <hr class="r-divider">
+      <div class="r-section-lbl">Description</div>
+      <p class="r-text" style="margin-bottom:1rem">${r.description}</p>
+      ${r.symptoms&&r.symptoms.length?`<div class="r-section-lbl">Symptoms</div><ul class="r-list" style="margin-bottom:1rem">${r.symptoms.map(s=>`<li>${s}</li>`).join('')}</ul>`:''}
+      <div class="r-section-lbl">Treatment</div>
+      <p class="r-text">${r.treatment}</p>
+      ${r.prevention&&r.prevention.length?`<div class="r-section-lbl" style="margin-top:.75rem">Prevention</div><ul class="r-list">${r.prevention.map(s=>`<li>${s}</li>`).join('')}</ul>`:''}
+      <button class="btn-aloud" onclick="speak('${(r.disease+'. '+r.treatment).replace(/'/g,'')}')">🔊 Read Aloud</button>
+    </div>`;
+}
+
+function speak(text) {
+  if ('speechSynthesis' in window) {
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 0.9;
+    speechSynthesis.speak(u);
+    toast('🔊 Reading result aloud…');
+  } else { toast('Voice not supported in this browser'); }
+}
+
+// ─── DIRECTORY ────────────────────────────────────────────────────────────────
+function setDirFilter(el) {
+  document.querySelectorAll('.ftab').forEach(f => f.classList.remove('on'));
+  el.classList.add('on');
+  dirFilter = el.dataset.cat;
+  renderDirectory();
+}
+
+function renderDirectory() {
+  const search = (document.getElementById('dir-search')?.value||'').toLowerCase();
+  const grid = document.getElementById('dir-grid');
+  if (!grid) return;
+  const filtered = DISEASES.filter(d => {
+    const matchSearch = !search || d.name.toLowerCase().includes(search) || d.plant.toLowerCase().includes(search) || d.pathogen.toLowerCase().includes(search);
+    const matchCat = dirFilter==='All' || d.cat===dirFilter;
+    return matchSearch && matchCat;
+  });
+  if (!filtered.length) { grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:4rem;color:var(--text-light)">No diseases matching your search.</div>`; return; }
+  const sevMap = { H:'sev-H', M:'sev-M', L:'sev-L' };
+  grid.innerHTML = filtered.map(d => `
+    <div class="dir-card" onclick="showDetail(${d.id})">
+      <div class="dir-card-top">
+        ${d.emoji}
+        <div class="sev-pill ${sevMap[d.sev]}" style="position:absolute;top:10px;right:10px">${d.severity}</div>
+        <div class="cat-badge">${d.cat}</div>
+      </div>
+      <div class="dir-card-body">
+        <div class="dir-card-name">${d.name}</div>
+        <div class="dir-card-plant">${d.plant} · <em>${d.pathogen}</em></div>
+        <div class="dir-card-desc">${d.desc}</div>
+        <div class="dir-card-link">View full details →</div>
+      </div>
+    </div>`).join('');
+}
+
+// ─── DISEASE DETAIL ───────────────────────────────────────────────────────────
+function showDetail(id) {
+  const d = DISEASES.find(x => x.id===id);
+  if (!d) return;
+  showPage('detail');
+
+  const sevPill = d.sev==='H'
+    ? `<span class="dpill dpill-red">High Severity</span>`
+    : d.sev==='M'
+    ? `<span class="dpill dpill-yellow">Medium Severity</span>`
+    : `<span class="dpill dpill-green">Low Severity</span>`;
+
+  const catPill = d.cat==='Fungal'?'dpill-green':d.cat==='Bacterial'?'dpill-blue':'dpill-yellow';
+
+  document.getElementById('detail-content').innerHTML = `
+    <button class="back-btn" onclick="history.back();showPage('directory')">← Back to Directory</button>
+    <div class="detail-hdr">
+      <div class="detail-emoji">${d.emoji}</div>
+      <div>
+        <div class="detail-pills">
+          <span class="dpill ${catPill}">${d.cat}</span>
+          ${sevPill}
+        </div>
+        <div class="detail-title">${d.name}</div>
+        <div class="detail-pathogen">${d.pathogen}</div>
+        <div class="detail-plant">Primary host: ${d.plant}</div>
+        <p class="detail-desc-txt">${d.desc}</p>
+      </div>
+    </div>`;
+
+  document.getElementById('detail-body').innerHTML = `
+    <div class="detail-2col">
+      <div class="info-card">
+        <div class="info-title">🩺 Symptoms</div>
+        ${d.symptoms.map(s=>`<div class="info-item"><span class="info-arrow">→</span>${s}</div>`).join('')}
+      </div>
+      <div class="info-card">
+        <div class="info-title">🔍 Causes</div>
+        ${d.causes.map(s=>`<div class="info-item"><span class="info-arrow">→</span>${s}</div>`).join('')}
+      </div>
+    </div>
+    <div class="detail-2col">
+      <div class="info-card">
+        <div class="info-title">🛡️ Prevention</div>
+        ${d.prevention.map(s=>`<div class="info-item"><span class="info-arrow">→</span>${s}</div>`).join('')}
+      </div>
+      <div class="info-card">
+        <div class="info-title">💊 Treatment Protocol</div>
+        ${d.treatment.map(s=>`<div class="info-item"><span class="info-arrow">→</span>${s}</div>`).join('')}
+      </div>
+    </div>
+    <div class="detail-2col">
+      <div class="info-card">
+        <div class="info-title">🌱 Affected Crops</div>
+        <div class="crop-chips">${d.affected.map(c=>`<span class="crop-chip">${c}</span>`).join('')}</div>
+      </div>
+      <div class="info-card">
+        <div class="info-title">📋 Recommended Care</div>
+        <p style="font-size:.85rem;color:var(--text-mid);line-height:1.7;font-weight:300;margin:0">${d.care}</p>
+      </div>
+    </div>
+    <div class="care-banner">
+      <div class="care-banner-lbl">⚡ Quick Action</div>
+      <div class="care-banner-txt">${d.treatment[0]} — Start treatment immediately and monitor closely every 2–3 days.</div>
+    </div>`;
+  renderFooter('detail-footer');
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+async function renderDashboard() {
+  const statsEl = document.getElementById('dash-stats');
+  const mainEl  = document.getElementById('dash-main');
+  if (!statsEl) return;
+
+  let stats = { total:0, diseased:0, healthy:0, top_disease:'—' };
+  let history = [];
+  try {
+    const [sr, hr] = await Promise.all([fetch(API+'/stats'), fetch(API+'/history')]);
+    if (sr.ok) stats   = await sr.json();
+    if (hr.ok) history = await hr.json();
+  } catch {}
+
+  statsEl.innerHTML = [
+    {icon:'📊',lbl:'Total Scans',val:stats.total,sub:'all time'},
+    {icon:'⚠️',lbl:'Diseased',val:stats.diseased,sub:'detected'},
+    {icon:'✅',lbl:'Healthy',val:stats.healthy,sub:'plants'},
+    {icon:'🌿',lbl:'Top Disease',val:stats.top_disease,sub:'most frequent',small:true},
+  ].map(s=>`
+    <div class="dash-stat">
+      <div class="dash-stat-lbl">${s.icon} ${s.lbl}</div>
+      <div class="dash-stat-val" style="${s.small?'font-size:1.1rem;font-family:DM Sans,sans-serif;font-weight:500':''}">${s.val}</div>
+      <div class="dash-stat-sub">${s.sub}</div>
+    </div>`).join('');
+
+  const histHTML = history.length === 0
+    ? `<div class="empty"><span class="empty-icon">🌿</span>No scans yet. <button class="btn-dark" onclick="showPage('detect')" style="margin-top:1rem;padding:10px 20px;font-size:.84rem">Scan Now →</button></div>`
+    : history.slice(0,12).map(h => {
+        const sevColor = h.severity==='High'?'#c84040':h.severity==='Medium'?'#b07010':h.severity==='None'?'#2c7a46':'#2c7a46';
+        return `<div class="hist-item">
+          <div class="hist-thumb">${h.img_b64?`<img src="${h.img_b64}" alt="">`:'🌿'}</div>
+          <div>
+            <div class="hist-disease">${h.disease}</div>
+            <div class="hist-meta">${h.plant} · ${h.ts}</div>
+          </div>
+          <div class="hist-right">
+            <div class="hist-conf">${h.confidence}%</div>
+            <div class="hist-sev" style="color:${sevColor}">${h.severity}</div>
+          </div>
+        </div>`;
+      }).join('');
+
+  const pct = stats.total > 0 ? Math.round((stats.healthy/stats.total)*100) : 0;
+
+  mainEl.innerHTML = `
+    <div class="dash-card dash-weather" style="color:#fff">
+      <div class="w-label">📍 Current Weather · Delhi</div>
+      <div style="display:flex;align-items:flex-end;gap:12px">
+        <div class="w-temp">28<span class="w-unit">°C</span></div>
+        <div style="font-size:2.2rem;margin-bottom:5px">⛅</div>
+      </div>
+      <div class="w-cond">Partly Cloudy — Warm &amp; humid</div>
+      <div class="w-metrics">
+        <div><span class="w-mval">72%</span><span class="w-mlbl">Humidity</span></div>
+        <div><span class="w-mval">14 km/h</span><span class="w-mlbl">Wind</span></div>
+        <div><span class="w-mval">25%</span><span class="w-mlbl">Rain</span></div>
+      </div>
+      <div class="risk-box">⚠️ High humidity. Fungal disease risk elevated. Apply preventive fungicide.</div>
+      <div style="margin-top:1.5rem">
+        <div style="display:flex;justify-content:space-between;font-size:.74rem;color:rgba(255,255,255,.38);margin-bottom:6px"><span>Crop health index</span><span>${pct}%</span></div>
+        <div class="prog-bar"><div class="prog-fill" id="dash-prog" style="width:0"></div></div>
+      </div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-card-title">
+        📋 Recent Scans
+        ${history.length?`<button class="clear-btn" onclick="clearHistory()">Clear All</button>`:''}
+      </div>
+      <div id="hist-list">${histHTML}</div>
+    </div>`;
+
+  setTimeout(() => { const b=document.getElementById('dash-prog'); if(b) b.style.width=pct+'%'; }, 300);
+}
+
+async function clearHistory() {
+  try {
+    await fetch(API+'/history', { method:'DELETE' });
+    toast('History cleared.');
+    renderDashboard();
+  } catch { toast('Could not reach server.'); }
+}
+
+// ─── CHATBOX ──────────────────────────────────────────────────────────────────
+const KB = {
+  'blight':'Late blight (Phytophthora infestans): Apply mancozeb 75% WP (2.5 g/L) or metalaxyl + mancozeb immediately. Repeat every 7–10 days. Remove infected plants and avoid overhead irrigation.',
+  'mildew':'Powdery mildew: Apply wettable sulfur (3 g/L) or propiconazole (1 ml/L) at first sign. Improve air circulation and reduce nitrogen. Two sprays 14 days apart usually provide control.',
+  'white spot':'White spots on leaves are typically powdery mildew or septoria. Apply propiconazole 25% EC (1 ml/L). Scout for rust pustules as well — if orange powder is present, treat for rust immediately.',
+  'fertilizer':'For rice in monsoon: apply split nitrogen — 30 kg N/ha at transplanting + 30 kg N/ha at tillering. Add potassium (60 kg K₂O/ha) to improve disease resistance. Avoid excess nitrogen during blast-prone periods.',
+  'fungal':'To prevent fungal disease in humid weather: (1) Apply copper-based fungicide preventively, (2) Space plants for airflow, (3) Water at soil level only, (4) Mulch to prevent spore splash, (5) Scout twice weekly.',
+  'wheat':'Wheat is prone to rust, powdery mildew, and septoria. Scout from tillering onwards. Apply propiconazole at flag leaf stage. Use resistant varieties and follow national rust advisories.',
+  'tomato':'Common tomato diseases: Late Blight, Early Blight, Septoria Leaf Spot, Fusarium Wilt, and TYLCV. Water at base, mulch soil, stake plants, and apply preventive copper fungicide during humid periods.',
+  'rice':'Rice diseases include Bacterial Blight and Blast. Use certified seeds, resistant varieties, split nitrogen application, and drain fields during active infection. Treat seeds with carbendazim before planting.',
+  'organic':'Organic pesticide options: (1) Neem oil (5 ml/L + soap) for insects, (2) Copper sulfate (3 g/L) for fungal/bacterial diseases, (3) Bacillus thuringiensis for caterpillars, (4) Beauveria bassiana for sucking pests.',
+  'default':'Great question! For healthy crops: (1) Scout weekly, (2) Water at soil level, (3) Rotate crops each season, (4) Maintain balanced nutrition with a soil test, (5) Apply preventive fungicide in humid periods. What specific crop or disease can I help with?'
+};
+
+function mountChatbox(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el || el.dataset.mounted) return;
+  el.dataset.mounted = '1';
+  chatHistory = [{ role:'bot', text:"Hello! I'm your AI agriculture assistant. Ask me about plant diseases, crop care, fertilisers, or any farming question." }];
+  el.innerHTML = `
+    <div class="chatbox">
+      <div class="chat-hdr">
+        <div class="chat-avatar">🌿</div>
+        <div>
+          <div class="chat-hdr-name">PlantCare Assistant</div>
+          <div class="chat-hdr-status">Online · Powered by AI</div>
+        </div>
+      </div>
+      <div class="chat-msgs" id="msgs-${containerId}"></div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="ci-${containerId}" placeholder="Ask about plant diseases or crop care…" onkeydown="if(event.key==='Enter')sendChat('${containerId}')">
+        <button class="chat-send" onclick="sendChat('${containerId}')">→</button>
+      </div>
+    </div>`;
+  renderMsgs(containerId);
+}
+
+function renderMsgs(cid) {
+  const el = document.getElementById('msgs-'+cid);
+  if (!el) return;
+  el.innerHTML = chatHistory.map(m=>`<div class="msg ${m.role}">${m.text}</div>`).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+function sendChat(cid) {
+  const inp = document.getElementById('ci-'+cid);
+  if (!inp) return;
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  chatHistory.push({ role:'user', text });
+  renderMsgs(cid);
+
+  // Show typing
+  const el = document.getElementById('msgs-'+cid);
+  const typEl = document.createElement('div');
+  typEl.className = 'msg bot';
+  typEl.innerHTML = `<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>`;
+  el.appendChild(typEl);
+  el.scrollTop = el.scrollHeight;
+
+  setTimeout(() => {
+    const key = Object.keys(KB).find(k => text.toLowerCase().includes(k));
+    const reply = KB[key] || KB.default;
+    chatHistory.push({ role:'bot', text:reply });
+    typEl.remove();
+    renderMsgs(cid);
+  }, 700 + Math.random()*400);
+}
+
+function insertQ(btn) {
+  const text = btn.textContent.replace(/ →$/,'');
+  // Find active chatbox input
+  const allInputs = document.querySelectorAll('.chat-input');
+  if (allInputs.length) {
+    allInputs[allInputs.length-1].value = text;
+    allInputs[allInputs.length-1].focus();
+  }
+}
+
+// ─── FOOTER ───────────────────────────────────────────────────────────────────
+function renderFooter(id) {
+  const el = document.getElementById(id);
+  if (!el || el.dataset.rendered) return;
+  el.dataset.rendered = '1';
+  el.innerHTML = `
+    <footer>
+      <div class="footer-top">
+        <div>
+          <div class="footer-brand"><div class="footer-brand-dot"></div>PlantCare AI</div>
+          <p class="footer-desc">AI-powered plant disease detection for modern farmers. Protecting crops with the precision of deep learning.</p>
+        </div>
+        <div>
+          <div class="footer-col-title">Platform</div>
+          <ul class="footer-list">
+            <li><button onclick="showPage('detect')">Disease Detection</button></li>
+            <li><button onclick="showPage('directory')">Disease Directory</button></li>
+            <li><button onclick="showPage('dashboard')">Dashboard</button></li>
+            <li><button onclick="showPage('chat')">AI Assistant</button></li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-col-title">Resources</div>
+          <ul class="footer-list">
+            <li><button onclick="showPage('about')">About Project</button></li>
+            <li><button onclick="showPage('directory')">Disease Guide</button></li>
+            <li><button>API Docs</button></li>
+            <li><button>Research</button></li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-col-title">Model</div>
+          <ul class="footer-list">
+            <li><button style="font-family:monospace;font-size:.78rem">plant_disease_model.h5</button></li>
+            <li><button style="font-family:monospace;font-size:.78rem">class_names.json</button></li>
+            <li><button>POST /predict</button></li>
+            <li><button>GET /history</button></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span class="footer-copy">© 2025 PlantCare AI. Built for farmers, powered by AI.</span>
+        <span class="footer-copy">Made with 🌿 in India</span>
+      </div>
+    </footer>`;
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  showPage('home');
+  // Trigger progress bar after short delay
+  setTimeout(() => {
+    document.querySelectorAll('.prog-fill').forEach(el => {
+      const w = el.style.width || '78%';
+      el.style.width = '0';
+      setTimeout(() => el.style.width = w, 100);
+    });
+  }, 600);
+});
+
+
+
+// const API_KEY = "66560994f9035b954e2c419df352c699";
+
+async function loadWeather(lat, lon){
+
+    try{
+
+        const response = await fetch(
+            `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
+        );
+
+        const data = await response.json();
+
+        console.log(data);
+
+        const city = data.name;
+
+        const temp = Math.round(data.main.temp);
+
+        const humidity = data.main.humidity;
+
+        const wind = data.wind.speed;
+
+        const weather = data.weather[0].main;
+
+        const description = data.weather[0].description;
+
+        let rainChance = 0;
+
+        if(data.rain){
+            rainChance = 80;
+        }
+
+        let icon = "☀️";
+
+        if(weather.includes("Cloud")) icon = "☁️";
+        if(weather.includes("Rain")) icon = "🌧️";
+        if(weather.includes("Thunder")) icon = "⛈️";
+        if(weather.includes("Clear")) icon = "☀️";
+        if(weather.includes("Mist")) icon = "🌫️";
+
+        document.getElementById("weather-location").innerHTML =
+            `📍 Current Weather · ${city}`;
+
+        document.getElementById("weather-temp").innerHTML =
+            `${temp}<span class="w-unit">°C</span>`;
+
+        document.getElementById("weather-icon").innerHTML = icon;
+
+        document.getElementById("weather-condition").innerHTML =
+            description;
+
+        document.getElementById("weather-humidity").innerHTML =
+            `${humidity}%`;
+
+        document.getElementById("weather-wind").innerHTML =
+            `${wind} km/h`;
+
+        document.getElementById("weather-rain").innerHTML =
+            `${rainChance}%`;
+
+        let riskText =
+            "✅ Weather conditions are good for crops.";
+
+        if(humidity > 70){
+
+            riskText =
+            "⚠️ High humidity detected. Fungal disease risk is elevated.";
+
+        }
+
+        if(temp > 35){
+
+            riskText =
+            "⚠️ High temperature stress detected for crops.";
+
+        }
+
+        document.getElementById("weather-risk").innerHTML = riskText;
+
+    }
+
+    catch(error){
+
+        console.log(error);
+
+        document.getElementById("weather-condition").innerHTML =
+            "Weather unavailable";
+
+    }
+
+}
+
+navigator.geolocation.getCurrentPosition(
+
+    (position)=>{
+
+        loadWeather(
+            position.coords.latitude,
+            position.coords.longitude
+        );
+
+    },
+
+    ()=>{
+
+        loadWeather(28.6139,77.2090);
+
+    }
+
+);
+
+
+
+
+</script>
+<script>
+
+const API_KEY = "66560994f9035b954e2c419df352c699";
+
+async function loadWeather(lat, lon){
+
+    try{
+
+        const response = await fetch(
+            `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
+        );
+
+        const data = await response.json();
+
+        console.log(data);
+
+        const city = data.name;
+
+        const temp = Math.round(data.main.temp);
+
+        const humidity = data.main.humidity;
+
+        const wind = data.wind.speed;
+
+        const weather = data.weather[0].main;
+
+        const description = data.weather[0].description;
+
+        let rainChance = 0;
+
+        if(data.rain){
+            rainChance = 80;
+        }
+
+        // ICON
+
+        let icon = "☀️";
+
+        if(weather.includes("Cloud")) icon = "☁️";
+        if(weather.includes("Rain")) icon = "🌧️";
+        if(weather.includes("Thunder")) icon = "⛈️";
+        if(weather.includes("Clear")) icon = "☀️";
+        if(weather.includes("Mist")) icon = "🌫️";
+
+        // UPDATE UI
+
+        document.getElementById("weather-location").innerHTML =
+            `📍 Current Weather · ${city}`;
+
+        document.getElementById("weather-temp").innerHTML =
+            `${temp}<span class="w-unit">°C</span>`;
+
+        document.getElementById("weather-icon").innerHTML = icon;
+
+        document.getElementById("weather-condition").innerHTML =
+            description;
+
+        document.getElementById("weather-humidity").innerHTML =
+            `${humidity}%`;
+
+        document.getElementById("weather-wind").innerHTML =
+            `${wind} km/h`;
+
+        document.getElementById("weather-rain").innerHTML =
+            `${rainChance}%`;
+
+        // RISK ANALYSIS
+
+        let riskText =
+            "✅ Weather conditions are good for crops.";
+
+        if(humidity > 70){
+
+            riskText =
+            "⚠️ High humidity detected. Fungal disease risk is elevated.";
+
+        }
+
+        if(temp > 35){
+
+            riskText =
+            "⚠️ High temperature stress detected for crops.";
+
+        }
+
+        document.getElementById("weather-risk").innerHTML = riskText;
+
+    }
+
+    catch(error){
+
+        console.log(error);
+
+        document.getElementById("weather-condition").innerHTML =
+            "Weather unavailable";
+
+    }
+
+}
+
+// GET USER LOCATION
+
+navigator.geolocation.getCurrentPosition(
+
+    (position)=>{
+
+        loadWeather(
+            position.coords.latitude,
+            position.coords.longitude
+        );
+
+    },
+
+    ()=>{
+
+        // FALLBACK LOCATION
+
+        loadWeather(28.6139,77.2090);
+
+    }
+
+);
+
+</script>
+
+
+</body>
+</html>
